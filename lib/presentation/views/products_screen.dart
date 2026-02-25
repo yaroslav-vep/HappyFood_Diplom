@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../viewmodels/products_viewmodel.dart';
 import '../../data/models/product_model.dart';
 
+import 'profile_screen.dart';
+
 class ProductsScreen extends ConsumerStatefulWidget {
   const ProductsScreen({super.key});
 
@@ -28,7 +30,22 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     final products = ref.watch(productsViewModelProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My Kitchen'), centerTitle: false),
+      appBar: AppBar(
+        title: const Text('My Kitchen'),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.account_circle_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: Column(
         children: [
           Container(

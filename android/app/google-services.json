@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "860886752746",
+    "project_id": "fdasf-41c94",
+    "storage_bucket": "fdasf-41c94.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:860886752746:android:ff8b3928f7f88cea6be693",
+        "android_client_info": {
+          "package_name": "com.example.happyfood"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA28qrU_HPbnccs9klZX9l0l7yF-jXz3MQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -59,7 +59,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(
+          24.0,
+        ), // Increased from 20 for premium feel
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -68,17 +70,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: Theme.of(context).cardColor,
+                    backgroundColor: AppTheme.primaryColorLight, // Light green
                     backgroundImage: const NetworkImage(
                       'https://i.pravatar.cc/300',
                     ),
                     onBackgroundImageError: (_, __) {
                       // Handle error silently or show icon
                     },
-                    child: const Icon(
+                    child: Icon(
                       Icons.person,
                       size: 50,
-                      color: Colors.grey,
+                      color: AppTheme.primaryColor, // Soft green
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -98,7 +100,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               context,
               label: 'Gender',
               value: user.gender,
-              items: ['Male', 'Female'],
+              items: ['Male', 'Female', 'Other'],
               onChanged: (val) => userViewModel.updateGender(val!),
             ),
             const SizedBox(height: 16),
@@ -197,26 +199,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ],
                   ),
-                  const Divider(color: Colors.grey),
+                  Divider(color: AppTheme.dividerColor), // Barely visible
                   user.allergies.isEmpty
-                      ? const Text(
+                      ? Text(
                           'No allergies listed.',
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: AppTheme.textSecondary),
                         )
                       : Wrap(
-                          spacing: 8,
+                          spacing: 12, // Increased spacing
+                          runSpacing: 8,
                           children: user.allergies
                               .map(
                                 (allergy) => Chip(
                                   label: Text(allergy),
-                                  backgroundColor: Colors.red[900],
-                                  labelStyle: const TextStyle(
-                                    color: Colors.white,
+                                  backgroundColor: const Color(
+                                    0xFFFFF5F3,
+                                  ), // Light peachy-pink
+                                  side: BorderSide(
+                                    color: AppTheme.errorColor,
+                                    width: 1,
                                   ),
-                                  deleteIcon: const Icon(
+                                  labelStyle: TextStyle(
+                                    color:
+                                        AppTheme.errorColor, // Soft peachy-red
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  deleteIcon: Icon(
                                     Icons.close,
                                     size: 16,
-                                    color: Colors.white,
+                                    color: AppTheme.errorColor,
                                   ),
                                   onDeleted: () => _removeAllergy(allergy),
                                 ),
@@ -251,6 +262,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     required List<String> items,
     required Function(String?) onChanged,
   }) {
+    // Ensure value exists in items to prevent crash
+    final safeValue = items.contains(value)
+        ? value
+        : (items.isNotEmpty ? items.first : null);
+
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(
         labelText: label,
@@ -263,7 +279,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         fillColor: Theme.of(context).cardColor,
       ),
       dropdownColor: Theme.of(context).cardColor,
-      value: value,
+      value: safeValue,
       items: items.map((item) {
         return DropdownMenuItem(value: item, child: Text(item));
       }).toList(),

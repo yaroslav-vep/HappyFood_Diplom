@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ThemeViewModel extends StateNotifier<ThemeMode> {
-  ThemeViewModel() : super(ThemeMode.dark); // Default to Dark
+  ThemeViewModel()
+    : super(ThemeMode.light); // Default to Light (premium design)
 
   void toggleTheme() {
     state = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;

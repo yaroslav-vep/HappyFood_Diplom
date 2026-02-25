@@ -4,6 +4,8 @@ import '../../core/constant/app_theme.dart';
 import '../viewmodels/nutrition_viewmodel.dart';
 import 'dart:math' as math;
 
+import 'profile_screen.dart';
+
 class NutritionScreen extends ConsumerWidget {
   const NutritionScreen({super.key});
 
@@ -12,7 +14,22 @@ class NutritionScreen extends ConsumerWidget {
     final nutrition = ref.watch(nutritionViewModelProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Daily Nutrition'), centerTitle: false),
+      appBar: AppBar(
+        title: const Text('Daily Nutrition'),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.account_circle_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(

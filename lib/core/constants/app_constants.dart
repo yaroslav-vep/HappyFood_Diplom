@@ -5,7 +5,11 @@ class AppConstants {
     'Lightly Active',
     'Moderately Active',
     'Very Active',
-    'Super Active',
+    'Extremely Active',
   ];
-  static const List<String> goals = ['Cut', 'Maintenance', 'Bulk'];
+  static const List<String> goals = [
+    'Lose Weight',
+    'Maintain Weight',
+    'Gain Weight',
+  ];
 }

@@ -1,135 +1,196 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constant/app_theme.dart';
+import '../viewmodels/chat_viewmodel.dart';
+import '../widgets/chat_bubble.dart';
 
-class AIChatScreen extends StatefulWidget {
-  const AIChatScreen({super.key});
+class AiChatScreen extends ConsumerStatefulWidget {
+  const AiChatScreen({super.key});
 
   @override
-  State<AIChatScreen> createState() => _AIChatScreenState();
+  ConsumerState<AiChatScreen> createState() => _AiChatScreenState();
 }
 
-class _AIChatScreenState extends State<AIChatScreen> {
-  final TextEditingController _controller = TextEditingController();
-  final List<Map<String, String>> _messages = [
-    {
-      'role': 'ai',
-      'text':
-          'Hello! I am your personal nutrition assistant. How can I help you today?',
-    },
-  ];
+class _AiChatScreenState extends ConsumerState<AiChatScreen> {
+  final TextEditingController _textController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
-  void _sendMessage() {
-    if (_controller.text.isNotEmpty) {
-      setState(() {
-        _messages.add({'role': 'user', 'text': _controller.text});
-        // Mock AI response
-        Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            setState(() {
-              _messages.add({
-                'role': 'ai',
-                'text':
-                    'I am currently a mock AI. Later I will be connected to a real backend to help you with recipes and nutrition!',
-              });
-            });
-          }
-        });
-        _controller.clear();
-      });
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final messages = ref.watch(chatMessagesProvider);
+    final isLoading = ref.watch(chatLoadingProvider);
+    final viewModel = ref.read(
+      chatViewModelProvider.notifier,
+    ); // Access notifier methods
+
+    // Auto-scroll on new message
+    ref.listen(chatMessagesProvider, (previous, next) {
+      Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+    });
+
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('AI Assistant'),
+        backgroundColor: AppTheme.surfaceColor,
+        elevation: 0,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.auto_awesome,
+                color: AppTheme.primaryColor,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Nutrition Assistant',
+                  style: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  'Powered by AI',
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                ),
+              ],
+            ),
+          ],
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          icon: Icon(Icons.arrow_back_ios, color: AppTheme.textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: Column(
         children: [
+          // Messages List
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              itemCount: messages.length + (isLoading ? 1 : 0),
               itemBuilder: (context, index) {
-                final msg = _messages[index];
-                final isUser = msg['role'] == 'user';
-                return Align(
-                  alignment: isUser
-                      ? Alignment.centerRight
-                      : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isUser
-                          ? Theme.of(context).primaryColor
-                          : Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(12),
-                        topRight: const Radius.circular(12),
-                        bottomLeft: isUser
-                            ? const Radius.circular(12)
-                            : Radius.zero,
-                        bottomRight: isUser
-                            ? Radius.zero
-                            : const Radius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      msg['text']!,
-                      style: TextStyle(
-                        color: isUser
-                            ? Colors.white
-                            : Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                  ),
-                );
+                if (index == messages.length) {
+                  return _buildLoadingIndicator();
+                }
+                return ChatBubble(message: messages[index]);
               },
             ),
           ),
+
+          // Input Area
           Container(
             padding: const EdgeInsets.all(16),
-            color: Theme.of(context).cardColor,
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    style: TextStyle(
-                      color: Theme.of(context).textTheme.bodyLarge?.color,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Ask something...',
-                      hintStyle: const TextStyle(color: Colors.grey),
-                      filled: true,
-                      fillColor: Theme.of(context).scaffoldBackgroundColor,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                    ),
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: Icon(Icons.send, color: Theme.of(context).primaryColor),
-                  onPressed: _sendMessage,
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceColor,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -4),
                 ),
               ],
             ),
+            child: SafeArea(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _textController,
+                      enabled: !isLoading,
+                      decoration: InputDecoration(
+                        hintText: 'Ask about meals, calories...',
+                        hintStyle: TextStyle(color: Colors.grey[400]),
+                        filled: true,
+                        fillColor: AppTheme.backgroundColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                      ),
+                      onSubmitted: (value) => _handleSend(viewModel),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  FloatingActionButton(
+                    onPressed: isLoading ? null : () => _handleSend(viewModel),
+                    backgroundColor: isLoading
+                        ? Colors.grey[300]
+                        : AppTheme.primaryColor,
+                    elevation: 0,
+                    mini: true,
+                    child: Icon(Icons.send, color: Colors.white, size: 20),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _handleSend(ChatViewModel viewModel) {
+    final text = _textController.text.trim();
+    if (text.isNotEmpty) {
+      viewModel.sendMessage(text);
+      _textController.clear();
+    }
+  }
+
+  Widget _buildLoadingIndicator() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(left: 16, bottom: 8, top: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Thinking...',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+            ),
+          ],
+        ),
       ),
     );
   }
