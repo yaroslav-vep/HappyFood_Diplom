@@ -4,20 +4,24 @@ import '../models/chat_message.dart';
 import '../models/user_model.dart';
 
 class ChatRepository {
-  // TODO: Replace with your actual Firebase Function URL after deployment
-  static const String _baseUrl = 'YOUR_FUNCTION_URL_HERE';
+  // Local Gemini proxy server (node server.js running on port 3000)
+  static const String _baseUrl = 'http://localhost:3000/chat';
 
   Future<ChatMessage> sendMessage(String message, UserModel? profile) async {
     try {
       final url = Uri.parse(_baseUrl);
 
-      final Map<String, dynamic> body = {
-        'data': {
-          // 'data' wrapper required for Firebase Callables
-          'message': message,
-          'profile': profile?.toJson(),
-        },
-      };
+      // Build a context-aware prompt using the user's profile if available
+      String prompt = message;
+      if (profile != null) {
+        prompt =
+            'User profile: weight=${profile.weight}kg, height=${profile.height}cm, '
+            'age=${profile.age}, gender=${profile.gender}, goal=${profile.goal}, '
+            'activity=${profile.activityLevel}, allergies=${profile.allergies.join(', ')}. '
+            'User question: $message';
+      }
+
+      final Map<String, dynamic> body = {'message': prompt};
 
       final response = await http.post(
         url,
@@ -28,34 +32,11 @@ class ChatRepository {
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
 
-        // Firebase Callables return data in a 'result' key
-        final result = jsonResponse['result'];
-
-        if (result != null) {
-          return ChatMessage.ai(
-            result['reply'] ?? "I'm sorry, I couldn't generate a response.",
-            isCalorieRelated: result['calorieMentioned'] ?? false,
-          );
-        } else {
-          // Direct response (if using onRequest without callable wrapper logic) in some cases,
-          // but our backend uses onCall/onRequest which might differ.
-          // Our backend is 'onRequest' but we output { reply: ... }.
-          // Wait, if we use 'onRequest' in backend, we return generic JSON, NOT wrapped in 'result' unless we did that manually.
-          // In index.js we did: res.status(200).json({ reply: ..., ... })
-          // So it is NOT wrapped in 'result' like a Callable.
-          // It is a standard REST response.
-
-          // Correction: The backend is onRequest, not onCall.
-          // So the response body is directly the object.
-
-          return ChatMessage.ai(
-            jsonResponse['reply'] ??
-                "I'm sorry, I couldn't generate a response.",
-            isCalorieRelated: jsonResponse['caloriesMentioned'] ?? false,
-          );
-        }
+        // Local proxy returns { reply: "..." }
+        return ChatMessage.ai(
+          jsonResponse['reply'] ?? "I'm sorry, I couldn't generate a response.",
+        );
       } else {
-        // Handle error
         String errorText = "Something went wrong. Please try again.";
         try {
           final errorJson = jsonDecode(response.body);

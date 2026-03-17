@@ -27,14 +27,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final messages = ref.watch(chatMessagesProvider);
+    final messages = ref.watch(chatViewModelProvider);
     final isLoading = ref.watch(chatLoadingProvider);
     final viewModel = ref.read(
       chatViewModelProvider.notifier,
     ); // Access notifier methods
 
     // Auto-scroll on new message
-    ref.listen(chatMessagesProvider, (previous, next) {
+    ref.listen(chatViewModelProvider, (previous, next) {
       Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
     });
 
