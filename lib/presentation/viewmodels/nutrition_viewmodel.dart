@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/nutrition_model.dart';
+import '../../data/models/eaten_meal_model.dart';
+import '../../data/models/recipe_model.dart';
 import 'user_viewmodel.dart';
 
 class NutritionViewModel extends StateNotifier<NutritionModel> {
@@ -7,13 +9,13 @@ class NutritionViewModel extends StateNotifier<NutritionModel> {
 
   NutritionViewModel(this._ref)
     : super(NutritionModel(calories: 0, protein: 0, fats: 0, carbs: 0)) {
-    // Listen to user changes to auto-recalculate
+    // Listen to user changes to auto-recalculate targets
     _ref.listen<Object?>(userViewModelProvider, (previous, next) {
-      calculateNeeds();
+      _recalculateTargets();
     });
   }
 
-  void calculateNeeds() {
+  void _recalculateTargets() {
     final user = _ref.read(userViewModelProvider);
 
     // Harris-Benedict Equation (Simplified)
@@ -52,18 +54,72 @@ class NutritionViewModel extends StateNotifier<NutritionModel> {
       tdee += 500;
     }
 
-    // Macros (Simple Split: 30% P, 35% C, 35% F for example, or standard 40/30/30)
-    // Let's use 30% Protein, 30% Fat, 40% Carbs
-    int calories = tdee.round();
-    int protein = ((calories * 0.30) / 4).round();
-    int fats = ((calories * 0.30) / 9).round();
-    int carbs = ((calories * 0.40) / 4).round();
+    // Macros: 30% Protein, 30% Fat, 40% Carbs
+    int targetCalories = tdee.round();
+    int targetProtein = ((targetCalories * 0.30) / 4).round();
+    int targetFats = ((targetCalories * 0.30) / 9).round();
+    int targetCarbs = ((targetCalories * 0.40) / 4).round();
 
-    state = NutritionModel(
-      calories: calories,
-      protein: protein,
-      fats: fats,
-      carbs: carbs,
+    // Recalculate keeping existing eaten meals
+    state = state.copyWith(
+      targetCalories: targetCalories,
+      targetProtein: targetProtein,
+      targetFats: targetFats,
+      targetCarbs: targetCarbs,
+    );
+  }
+
+  // Called from legacy code
+  void calculateNeeds() {
+    _recalculateTargets();
+  }
+
+  // Add a meal that was eaten
+  void addEatenMeal(RecipeModel recipe) {
+    final newMeal = EatenMealModel(recipe: recipe, eatenAt: DateTime.now());
+    final updatedMeals = [...state.eatenMeals, newMeal];
+
+    // Recalculate consumed totals
+    final totalCalories = updatedMeals.fold(0, (sum, m) => sum + m.recipe.calories);
+    final totalProtein = updatedMeals.fold(0, (sum, m) => sum + m.recipe.protein);
+    final totalFats = updatedMeals.fold(0, (sum, m) => sum + m.recipe.fats);
+    final totalCarbs = updatedMeals.fold(0, (sum, m) => sum + m.recipe.carbs);
+
+    state = state.copyWith(
+      calories: totalCalories,
+      protein: totalProtein,
+      fats: totalFats,
+      carbs: totalCarbs,
+      eatenMeals: updatedMeals,
+    );
+  }
+
+  // Remove a specific eaten meal
+  void removeEatenMeal(EatenMealModel meal) {
+    final updatedMeals = state.eatenMeals.where((m) => m != meal).toList();
+
+    final totalCalories = updatedMeals.fold(0, (sum, m) => sum + m.recipe.calories);
+    final totalProtein = updatedMeals.fold(0, (sum, m) => sum + m.recipe.protein);
+    final totalFats = updatedMeals.fold(0, (sum, m) => sum + m.recipe.fats);
+    final totalCarbs = updatedMeals.fold(0, (sum, m) => sum + m.recipe.carbs);
+
+    state = state.copyWith(
+      calories: totalCalories,
+      protein: totalProtein,
+      fats: totalFats,
+      carbs: totalCarbs,
+      eatenMeals: updatedMeals,
+    );
+  }
+
+  // Reset today's intake
+  void clearToday() {
+    state = state.copyWith(
+      calories: 0,
+      protein: 0,
+      fats: 0,
+      carbs: 0,
+      eatenMeals: [],
     );
   }
 }
@@ -71,7 +127,7 @@ class NutritionViewModel extends StateNotifier<NutritionModel> {
 final nutritionViewModelProvider =
     StateNotifierProvider<NutritionViewModel, NutritionModel>((ref) {
       final vm = NutritionViewModel(ref);
-      // Initial calculation
+      // Initial calculation of targets
       vm.calculateNeeds();
       return vm;
     });

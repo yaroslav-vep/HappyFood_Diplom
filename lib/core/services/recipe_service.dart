@@ -184,6 +184,8 @@ class RecipeService {
     ),
   ];
 
+  List<RecipeModel> get allRecipes => _allRecipes;
+
   List<RecipeModel> searchRecipes(String query) {
     if (query.isEmpty) return _allRecipes;
     return _allRecipes.where((recipe) {

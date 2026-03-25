@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/recipe_model.dart';
+import '../viewmodels/nutrition_viewmodel.dart';
 
-class RecipeDetailScreen extends StatelessWidget {
+class RecipeDetailScreen extends ConsumerStatefulWidget {
   final RecipeModel recipe;
   final bool isAllergic;
 
@@ -12,7 +14,58 @@ class RecipeDetailScreen extends StatelessWidget {
   });
 
   @override
+  ConsumerState<RecipeDetailScreen> createState() =>
+      _RecipeDetailScreenState();
+}
+
+class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
+  late Set<int> _checkedIngredients;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkedIngredients = {};
+  }
+
+  void _toggleIngredient(int index) {
+    setState(() {
+      if (_checkedIngredients.contains(index)) {
+        _checkedIngredients.remove(index);
+      } else {
+        _checkedIngredients.add(index);
+      }
+    });
+  }
+
+  void _logMeal() {
+    ref.read(nutritionViewModelProvider.notifier).addEatenMeal(widget.recipe);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '«${widget.recipe.title}» добавлено в дневник питания!',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.green[700],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final recipe = widget.recipe;
+    final isAllergic = widget.isAllergic;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(recipe.title),
@@ -27,6 +80,7 @@ class RecipeDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Hero image
             Stack(
               children: [
                 Container(
@@ -104,65 +158,129 @@ class RecipeDetailScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 30),
+
+                  // Nutrition info
                   _buildSectionTitle(context, 'Nutrition (per serving)'),
                   const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildInfoColumn(
-                        context,
-                        'Calories',
-                        '${recipe.calories}',
-                        'kcal',
-                        Colors.orange,
-                      ),
-                      _buildInfoColumn(
-                        context,
-                        'Protein',
-                        '${recipe.protein}',
-                        'g',
-                        Colors.blue,
-                      ),
-                      _buildInfoColumn(
-                        context,
-                        'Fats',
-                        '${recipe.fats}',
-                        'g',
-                        Colors.yellow,
-                      ),
-                      _buildInfoColumn(
-                        context,
-                        'Carbs',
-                        '${recipe.carbs}',
-                        'g',
-                        Colors.green,
-                      ),
+                      _buildInfoColumn(context, 'Calories', '${recipe.calories}', 'kcal', Colors.orange),
+                      _buildInfoColumn(context, 'Protein', '${recipe.protein}', 'g', Colors.blue),
+                      _buildInfoColumn(context, 'Fats', '${recipe.fats}', 'g', Colors.yellow),
+                      _buildInfoColumn(context, 'Carbs', '${recipe.carbs}', 'g', Colors.green),
                     ],
                   ),
                   const SizedBox(height: 30),
 
-                  _buildSectionTitle(context, 'Ingredients'),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: recipe.ingredients
-                        .map(
-                          (ing) => Chip(
-                            label: Text(ing),
-                            backgroundColor: Theme.of(context).cardColor,
-                            labelStyle: TextStyle(
-                              color:
-                                  Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.white
-                                  : Colors.black,
+                  // Ingredients with checkboxes
+                  Row(
+                    children: [
+                      _buildSectionTitle(context, 'Ingredients'),
+                      const Spacer(),
+                      Text(
+                        '${_checkedIngredients.length}/${recipe.ingredients.length} имею',
+                        style: TextStyle(
+                          color: Theme.of(context).primaryColor,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: recipe.ingredients.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        color: Theme.of(context).dividerColor.withOpacity(0.3),
+                      ),
+                      itemBuilder: (context, index) {
+                        final isChecked = _checkedIngredients.contains(index);
+                        return InkWell(
+                          onTap: () => _toggleIngredient(index),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            child: Row(
+                              children: [
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    color: isChecked
+                                        ? Theme.of(context).primaryColor
+                                        : Colors.transparent,
+                                    border: Border.all(
+                                      color: isChecked
+                                          ? Theme.of(context).primaryColor
+                                          : Colors.grey,
+                                      width: 2,
+                                    ),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: isChecked
+                                      ? const Icon(
+                                          Icons.check,
+                                          size: 16,
+                                          color: Colors.white,
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    recipe.ingredients[index],
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: isChecked
+                                          ? Theme.of(context).primaryColor
+                                          : Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge
+                                              ?.color,
+                                      decoration: isChecked
+                                          ? TextDecoration.none
+                                          : null,
+                                      fontWeight: isChecked
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    ),
+                                  ),
+                                ),
+                                if (isChecked)
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: Theme.of(context).primaryColor,
+                                    size: 18,
+                                  )
+                                else
+                                  Icon(
+                                    Icons.radio_button_unchecked,
+                                    color: Colors.grey[600],
+                                    size: 18,
+                                  ),
+                              ],
                             ),
                           ),
-                        )
-                        .toList(),
+                        );
+                      },
+                    ),
                   ),
                   const SizedBox(height: 30),
+
+                  // Cooking steps
                   _buildSectionTitle(context, 'Cooking Steps'),
                   const SizedBox(height: 10),
                   ListView.separated(
@@ -184,25 +302,99 @@ class RecipeDetailScreen extends StatelessWidget {
                       );
                     },
                   ),
-                  const SizedBox(height: 40),
+
+                  const SizedBox(height: 32),
+
+                  // "I Ate This" button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Delivery integration coming soon!'),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.delivery_dining),
-                      label: const Text('Order Ingredients'),
+                      onPressed: _logMeal,
+                      icon: const Icon(Icons.restaurant, color: Colors.white),
+                      label: const Text(
+                        '✓ Съел / I Ate This',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
                       style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
+
+                  // Buttons row: Order Ingredients + Order Dish
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Заказ ингредиентов — скоро!'),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.shopping_basket_outlined),
+                          label: const Text(
+                            'Ингредиенты',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: BorderSide(
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Заказ из ресторана — скоро!'),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.delivery_dining),
+                          label: const Text(
+                            'Из ресторана',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            side: BorderSide(
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),

@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../viewmodels/products_viewmodel.dart';
 import '../../data/models/product_model.dart';
-
+import '../../data/models/recipe_model.dart';
+import '../../core/services/recipe_service.dart';
+import 'recipe_detail_screen.dart';
 import 'profile_screen.dart';
 
 class ProductsScreen extends ConsumerStatefulWidget {
@@ -15,6 +17,7 @@ class ProductsScreen extends ConsumerStatefulWidget {
 
 class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   final TextEditingController _controller = TextEditingController();
+  final RecipeService _recipeService = RecipeService();
 
   void _addProduct() {
     if (_controller.text.isNotEmpty) {
@@ -25,9 +28,38 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     }
   }
 
+  List<RecipeModel> _getMatchingRecipes(List<ProductModel> products) {
+    if (products.isEmpty) return [];
+    final names = products.map((p) => p.name.toLowerCase()).toSet();
+    return _recipeService.allRecipes.where((recipe) {
+      // Show recipe if at least one ingredient matches
+      return recipe.ingredients.any(
+        (ing) => names.contains(ing.toLowerCase()),
+      );
+    }).toList()
+      ..sort((a, b) {
+        // Sort by number of matching ingredients (more = better)
+        final aMatches = a.ingredients
+            .where((ing) => names.contains(ing.toLowerCase()))
+            .length;
+        final bMatches = b.ingredients
+            .where((ing) => names.contains(ing.toLowerCase()))
+            .length;
+        return bMatches.compareTo(aMatches);
+      });
+  }
+
+  int _countMatched(RecipeModel recipe, Set<String> productNames) {
+    return recipe.ingredients
+        .where((ing) => productNames.contains(ing.toLowerCase()))
+        .length;
+  }
+
   @override
   Widget build(BuildContext context) {
     final products = ref.watch(productsViewModelProvider);
+    final matchingRecipes = _getMatchingRecipes(products);
+    final productNames = products.map((p) => p.name.toLowerCase()).toSet();
 
     return Scaffold(
       appBar: AppBar(
@@ -48,14 +80,10 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
       ),
       body: Column(
         children: [
+          // Input area
           Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(20),
-              ),
-            ),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            color: Theme.of(context).scaffoldBackgroundColor,
             child: Row(
               children: [
                 Expanded(
@@ -63,8 +91,8 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                     controller: _controller,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      labelText: 'Add Product (e.g., Eggs, Milk)',
-                      labelStyle: const TextStyle(color: Colors.grey),
+                      hintText: 'Добавить продукт (например, Яйца)',
+                      hintStyle: const TextStyle(color: Colors.grey),
                       filled: true,
                       fillColor: Theme.of(context).cardColor,
                       border: OutlineInputBorder(
@@ -93,28 +121,159 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
               ],
             ),
           ),
+
           Expanded(
             child: products.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.kitchen, size: 64, color: Colors.grey[800]),
+                        Icon(
+                          Icons.kitchen,
+                          size: 64,
+                          color: Colors.grey[800],
+                        ),
                         const SizedBox(height: 16),
                         const Text(
-                          'Your kitchen is empty.',
-                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                          'Добавьте продукты,\nчтобы увидеть подходящие блюда',
+                          style: TextStyle(color: Colors.grey, fontSize: 15),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: products.length,
-                    itemBuilder: (context, index) {
-                      final product = products[index];
-                      return _buildProductItem(context, product, ref);
-                    },
+                : CustomScrollView(
+                    slivers: [
+                      // Products chips
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Мои продукты (${products.length})',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: products.map((product) {
+                                  return Chip(
+                                    label: Text(product.name),
+                                    deleteIcon: const Icon(
+                                      Icons.close,
+                                      size: 16,
+                                    ),
+                                    onDeleted: () {
+                                      ref
+                                          .read(
+                                            productsViewModelProvider.notifier,
+                                          )
+                                          .removeProduct(product.name);
+                                    },
+                                    backgroundColor:
+                                        Theme.of(context).primaryColor.withOpacity(0.15),
+                                    labelStyle: TextStyle(
+                                      color: Theme.of(context).primaryColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    deleteIconColor:
+                                        Theme.of(context).primaryColor,
+                                    side: BorderSide(
+                                      color: Theme.of(context)
+                                          .primaryColor
+                                          .withOpacity(0.4),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                              const SizedBox(height: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Recipe suggestions header
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                          child: Row(
+                            children: [
+                              Text(
+                                'Подходящие блюда',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).primaryColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${matchingRecipes.length}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Recipes list
+                      if (matchingRecipes.isEmpty)
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.search_off,
+                                    size: 48,
+                                    color: Colors.grey[600],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    'Нет блюд с этими продуктами.\nДобавьте ещё!',
+                                    style: TextStyle(color: Colors.grey),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final recipe = matchingRecipes[index];
+                              final matched =
+                                  _countMatched(recipe, productNames);
+                              final total = recipe.ingredients.length;
+                              return _buildRecipeSuggestion(
+                                context,
+                                recipe,
+                                matched,
+                                total,
+                              );
+                            },
+                            childCount: matchingRecipes.length,
+                          ),
+                        ),
+
+                      const SliverToBoxAdapter(child: SizedBox(height: 20)),
+                    ],
                   ),
           ),
         ],
@@ -122,63 +281,138 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     );
   }
 
-  Widget _buildProductItem(
+  Widget _buildRecipeSuggestion(
     BuildContext context,
-    ProductModel product,
-    WidgetRef ref,
+    RecipeModel recipe,
+    int matched,
+    int total,
   ) {
-    return Dismissible(
-      key: Key(product.name),
-      direction: DismissDirection.endToStart,
-      onDismissed: (_) {
-        ref
-            .read(productsViewModelProvider.notifier)
-            .removeProduct(product.name);
+    final matchRatio = matched / total;
+    final hasAll = matched == total;
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RecipeDetailScreen(recipe: recipe),
+          ),
+        );
       },
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.red[900],
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
+          border: hasAll
+              ? Border.all(
+                  color: Theme.of(context).primaryColor,
+                  width: 1.5,
+                )
+              : null,
         ),
-        child: ListTile(
-          leading: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: BorderRadius.circular(8),
+        child: Row(
+          children: [
+            // Image
+            ClipRRect(
+              borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(16),
+              ),
+              child: Image.network(
+                recipe.imageUrl,
+                width: 90,
+                height: 90,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 90,
+                  height: 90,
+                  color: Colors.grey[800],
+                  child: const Icon(Icons.restaurant, color: Colors.grey),
+                ),
+              ),
             ),
-            child: Icon(
-              Icons.egg_outlined,
-              color: Theme.of(context).primaryColor,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            recipe.title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                        if (hasAll)
+                          Container(
+                            margin: const EdgeInsets.only(right: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).primaryColor,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              '✓ Всё есть',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${recipe.calories} ккал  •  Б:${recipe.protein}г  Ж:${recipe.fats}г  У:${recipe.carbs}г',
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                    const SizedBox(height: 8),
+                    // Ingredient match bar
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: matchRatio,
+                              backgroundColor:
+                                  Colors.grey.withOpacity(0.2),
+                              color: hasAll
+                                  ? Theme.of(context).primaryColor
+                                  : Colors.orange,
+                              minHeight: 5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '$matched/$total',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: hasAll
+                                ? Theme.of(context).primaryColor
+                                : Colors.orange,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-          title: Text(
-            product.name,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-            ),
-          ),
-          trailing: IconButton(
-            // Keep button for non-swipers
-            icon: Icon(Icons.delete_outline, color: Colors.red[300]),
-            onPressed: () {
-              ref
-                  .read(productsViewModelProvider.notifier)
-                  .removeProduct(product.name);
-            },
-          ),
+          ],
         ),
       ),
     );

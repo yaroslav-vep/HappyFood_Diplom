@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/constant/app_theme.dart';
 import '../viewmodels/nutrition_viewmodel.dart';
+import '../../data/models/eaten_meal_model.dart';
 import 'dart:math' as math;
-
 import 'profile_screen.dart';
 
 class NutritionScreen extends ConsumerWidget {
@@ -12,12 +11,52 @@ class NutritionScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final nutrition = ref.watch(nutritionViewModelProvider);
+    final notifier = ref.read(nutritionViewModelProvider.notifier);
+
+    final consumed = nutrition.calories;
+    final target = nutrition.targetCalories > 0 ? nutrition.targetCalories : 2000;
+    final progress = (consumed / target).clamp(0.0, 1.0);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Daily Nutrition'),
         centerTitle: false,
         actions: [
+          if (nutrition.eatenMeals.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Сбросить дневник',
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Сбросить дневник?'),
+                    content: const Text(
+                      'Все записи о приёмах пищи за сегодня будут удалены.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Отмена'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          notifier.clearToday();
+                          Navigator.pop(ctx);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red[700],
+                        ),
+                        child: const Text(
+                          'Сбросить',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.account_circle_outlined),
             onPressed: () {
@@ -35,14 +74,13 @@ class NutritionScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Big Circular Indicator for Calories
+            // Calorie circle
             SizedBox(
               height: 250,
               width: 250,
               child: CustomPaint(
                 painter: _CaloriePainter(
-                  calories: nutrition.calories.toDouble(),
-                  maxCalories: 2500, // Placeholder max
+                  progress: progress,
                   color: Theme.of(context).primaryColor,
                   bgColor: Theme.of(context).cardColor,
                 ),
@@ -57,78 +95,260 @@ class NutritionScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${nutrition.calories}',
+                        '$consumed',
                         style: TextStyle(
                           fontSize: 48,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(
-                            context,
-                          ).textTheme.headlineMedium?.color,
+                          color: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.color,
                         ),
                       ),
-                      const Text(
-                        'kcal / day',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      Text(
+                        'из $target ккал',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 40),
+
+            const SizedBox(height: 8),
+
+            // Remaining calories hint
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    consumed > target
+                        ? Icons.warning_amber_rounded
+                        : Icons.check_circle_outline,
+                    size: 16,
+                    color: consumed > target
+                        ? Colors.orange
+                        : Theme.of(context).primaryColor,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    consumed > target
+                        ? 'Превышено на ${consumed - target} ккал'
+                        : 'Осталось ${target - consumed} ккал',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: consumed > target
+                          ? Colors.orange
+                          : Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Macros row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: _buildMacroCard(
                     context,
-                    'Protein',
+                    'Белки',
                     '${nutrition.protein}g',
+                    '/ ${nutrition.targetProtein}g',
                     Colors.blueAccent,
-                    nutrition.protein / 200,
+                    nutrition.targetProtein > 0
+                        ? nutrition.protein / nutrition.targetProtein
+                        : 0,
+                    Icons.fitness_center,
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _buildMacroCard(
                     context,
-                    'Fats',
+                    'Жиры',
                     '${nutrition.fats}g',
+                    '/ ${nutrition.targetFats}g',
                     Colors.orangeAccent,
-                    nutrition.fats / 100,
+                    nutrition.targetFats > 0
+                        ? nutrition.fats / nutrition.targetFats
+                        : 0,
+                    Icons.water_drop,
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _buildMacroCard(
                     context,
-                    'Carbs',
+                    'Углеводы',
                     '${nutrition.carbs}g',
+                    '/ ${nutrition.targetCarbs}g',
                     Colors.greenAccent,
-                    nutrition.carbs / 300,
+                    nutrition.targetCarbs > 0
+                        ? nutrition.carbs / nutrition.targetCarbs
+                        : 0,
+                    Icons.grass,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 40),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
+
+            const SizedBox(height: 32),
+
+            // Eaten meals log
+            if (nutrition.eatenMeals.isEmpty)
+              _buildEmptyMealsHint(context)
+            else ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Icon(Icons.info_outline, color: Colors.grey),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      'Your daily targets based on your goal to "${ref.watch(nutritionViewModelProvider.notifier).debugGoal}"',
-                      style: const TextStyle(color: Colors.grey),
-                    ),
+                  Text(
+                    'Приёмы пищи сегодня',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  Text(
+                    '${nutrition.eatenMeals.length} блюд',
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              ...nutrition.eatenMeals.map(
+                (meal) => _buildMealLogCard(context, meal, ref),
+              ),
+            ],
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyMealsHint(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.restaurant_menu, size: 48, color: Colors.grey),
+          const SizedBox(height: 12),
+          const Text(
+            'Вы ещё ничего не ели сегодня',
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Откройте карточку блюда и нажмите «Съел»',
+            style: TextStyle(color: Colors.grey, fontSize: 13),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMealLogCard(
+    BuildContext context,
+    EatenMealModel meal,
+    WidgetRef ref,
+  ) {
+    final timeStr =
+        '${meal.eatenAt.hour.toString().padLeft(2, '0')}:${meal.eatenAt.minute.toString().padLeft(2, '0')}';
+
+    return Dismissible(
+      key: Key('${meal.recipe.title}_${meal.eatenAt.millisecondsSinceEpoch}'),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) {
+        ref.read(nutritionViewModelProvider.notifier).removeEatenMeal(meal);
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: Colors.red[700],
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            // Thumbnail
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                meal.recipe.imageUrl,
+                width: 58,
+                height: 58,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  width: 58,
+                  height: 58,
+                  color: Colors.grey[800],
+                  child: const Icon(Icons.restaurant, color: Colors.grey),
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    meal.recipe.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${meal.recipe.calories} ккал  •  Б:${meal.recipe.protein}г  Ж:${meal.recipe.fats}г  У:${meal.recipe.carbs}г',
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  timeStr,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).primaryColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Icon(Icons.chevron_left, color: Colors.grey, size: 18),
+              ],
             ),
           ],
         ),
@@ -140,11 +360,12 @@ class NutritionScreen extends ConsumerWidget {
     BuildContext context,
     String label,
     String value,
+    String target,
     Color color,
     double progress,
+    IconData icon,
   ) {
     return Container(
-      // width: 100, // Removed fixed width
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -160,32 +381,27 @@ class NutritionScreen extends ConsumerWidget {
                 width: 50,
                 child: CircularProgressIndicator(
                   value: progress.clamp(0.0, 1.0),
-                  backgroundColor: Theme.of(
-                    context,
-                  ).disabledColor.withOpacity(0.2),
+                  backgroundColor:
+                      Theme.of(context).disabledColor.withOpacity(0.2),
                   color: color,
                   strokeWidth: 5,
                 ),
               ),
-              Icon(
-                label == 'Protein'
-                    ? Icons.fitness_center
-                    : label == 'Fats'
-                    ? Icons.water_drop
-                    : Icons.grass,
-                size: 20,
-                color: color,
-              ),
+              Icon(icon, size: 20, color: color),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             value,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              fontSize: 18,
+              fontSize: 16,
               color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
+          ),
+          Text(
+            target,
+            style: const TextStyle(color: Colors.grey, fontSize: 11),
           ),
           const SizedBox(height: 4),
           Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
@@ -196,14 +412,12 @@ class NutritionScreen extends ConsumerWidget {
 }
 
 class _CaloriePainter extends CustomPainter {
-  final double calories;
-  final double maxCalories;
+  final double progress;
   final Color color;
   final Color bgColor;
 
   _CaloriePainter({
-    required this.calories,
-    required this.maxCalories,
+    required this.progress,
     required this.color,
     required this.bgColor,
   });
@@ -211,8 +425,8 @@ class _CaloriePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-    final strokeWidth = 15.0;
+    final radius = size.width / 2 - 10;
+    const strokeWidth = 15.0;
 
     final bgPaint = Paint()
       ..color = bgColor
@@ -228,7 +442,7 @@ class _CaloriePainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeWidth = strokeWidth;
 
-    final sweepAngle = 2 * math.pi * (calories / maxCalories).clamp(0.0, 1.0);
+    final sweepAngle = 2 * math.pi * progress.clamp(0.0, 1.0);
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       -math.pi / 2,
@@ -240,10 +454,4 @@ class _CaloriePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}
-
-// Extension to access goal for debug text if needed, otherwise ignore error or fix logic
-extension on NutritionViewModel {
-  String get debugGoal =>
-      "Maintain"; // Placeholder as we can't easily access state here without re-watching user provider directly
 }
