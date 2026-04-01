@@ -19,25 +19,25 @@ class NutritionScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daily Nutrition'),
+        title: const Text('Nutrition'),
         centerTitle: false,
         actions: [
           if (nutrition.eatenMeals.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.refresh),
-              tooltip: 'Сбросить дневник',
+              tooltip: 'Reset diary',
               onPressed: () {
                 showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: const Text('Сбросить дневник?'),
+                    title: const Text('Reset diary?'),
                     content: const Text(
-                      'Все записи о приёмах пищи за сегодня будут удалены.',
+                      'All meal records for today will be deleted.',
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Отмена'),
+                        child: const Text('Cancel'),
                       ),
                       ElevatedButton(
                         onPressed: () {
@@ -48,7 +48,7 @@ class NutritionScreen extends ConsumerWidget {
                           backgroundColor: Colors.red[700],
                         ),
                         child: const Text(
-                          'Сбросить',
+                          'Reset',
                           style: TextStyle(color: Colors.white),
                         ),
                       ),
@@ -106,7 +106,7 @@ class NutritionScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        'из $target ккал',
+                        'of $target kcal',
                         style: const TextStyle(
                           fontSize: 13,
                           color: Colors.grey,
@@ -142,8 +142,8 @@ class NutritionScreen extends ConsumerWidget {
                   const SizedBox(width: 6),
                   Text(
                     consumed > target
-                        ? 'Превышено на ${consumed - target} ккал'
-                        : 'Осталось ${target - consumed} ккал',
+                        ? 'Exceeded by ${consumed - target} kcal'
+                        : '${target - consumed} kcal left',
                     style: TextStyle(
                       fontSize: 13,
                       color: consumed > target
@@ -164,7 +164,7 @@ class NutritionScreen extends ConsumerWidget {
                 Expanded(
                   child: _buildMacroCard(
                     context,
-                    'Белки',
+                    'Protein',
                     '${nutrition.protein}g',
                     '/ ${nutrition.targetProtein}g',
                     Colors.blueAccent,
@@ -178,7 +178,7 @@ class NutritionScreen extends ConsumerWidget {
                 Expanded(
                   child: _buildMacroCard(
                     context,
-                    'Жиры',
+                    'Fats',
                     '${nutrition.fats}g',
                     '/ ${nutrition.targetFats}g',
                     Colors.orangeAccent,
@@ -192,7 +192,7 @@ class NutritionScreen extends ConsumerWidget {
                 Expanded(
                   child: _buildMacroCard(
                     context,
-                    'Углеводы',
+                    'Carbs',
                     '${nutrition.carbs}g',
                     '/ ${nutrition.targetCarbs}g',
                     Colors.greenAccent,
@@ -215,11 +215,11 @@ class NutritionScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Приёмы пищи сегодня',
+                    'Today\'s Meals',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   Text(
-                    '${nutrition.eatenMeals.length} блюд',
+                    '${nutrition.eatenMeals.length} items',
                     style: const TextStyle(color: Colors.grey, fontSize: 13),
                   ),
                 ],
@@ -248,7 +248,7 @@ class NutritionScreen extends ConsumerWidget {
           const Icon(Icons.restaurant_menu, size: 48, color: Colors.grey),
           const SizedBox(height: 12),
           const Text(
-            'Вы ещё ничего не ели сегодня',
+            'You haven\'t eaten anything yet today',
             style: TextStyle(
               color: Colors.grey,
               fontSize: 15,
@@ -257,7 +257,7 @@ class NutritionScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Откройте карточку блюда и нажмите «Съел»',
+            'Open a recipe card and press "I Ate This"',
             style: TextStyle(color: Colors.grey, fontSize: 13),
             textAlign: TextAlign.center,
           ),
@@ -329,7 +329,7 @@ class NutritionScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${meal.recipe.calories} ккал  •  Б:${meal.recipe.protein}г  Ж:${meal.recipe.fats}г  У:${meal.recipe.carbs}г',
+                    '${meal.recipe.calories} kcal  •  P:${meal.recipe.protein}g  F:${meal.recipe.fats}g  C:${meal.recipe.carbs}g',
                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                 ],

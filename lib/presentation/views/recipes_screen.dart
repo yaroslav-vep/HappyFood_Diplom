@@ -40,7 +40,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search for dishes...',
+                hintText: 'Search dishes...',
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 fillColor: Theme.of(context).cardColor,
@@ -84,7 +84,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                     color: Colors.grey[800],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                   const Text(
                     'No recipes found.',
                     style: TextStyle(color: Colors.grey),
                   ),

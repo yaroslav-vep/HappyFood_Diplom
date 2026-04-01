@@ -70,7 +70,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   ),
                 ),
                 Text(
-                  'Powered by AI',
+                  'AI Powered',
                   style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                 ),
               ],
@@ -120,7 +120,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                       controller: _textController,
                       enabled: !isLoading,
                       decoration: InputDecoration(
-                        hintText: 'Ask about meals, calories...',
+                        hintText: 'Ask about dishes, calories...',
                         hintStyle: TextStyle(color: Colors.grey[400]),
                         filled: true,
                         fillColor: AppTheme.backgroundColor,

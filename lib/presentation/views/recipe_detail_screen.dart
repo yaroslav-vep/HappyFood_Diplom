@@ -47,7 +47,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                '«${widget.recipe.title}» добавлено в дневник питания!',
+                '«${widget.recipe.title}» added to nutrition diary!',
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
@@ -128,7 +128,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Contains allergens matching your profile!',
+                              'Contains allergens that match your profile!',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -160,7 +160,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                   const SizedBox(height: 30),
 
                   // Nutrition info
-                  _buildSectionTitle(context, 'Nutrition (per serving)'),
+                  _buildSectionTitle(context, 'Nutritional Value (per serving)'),
                   const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -179,7 +179,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                       _buildSectionTitle(context, 'Ingredients'),
                       const Spacer(),
                       Text(
-                        '${_checkedIngredients.length}/${recipe.ingredients.length} имею',
+                        '${_checkedIngredients.length}/${recipe.ingredients.length} have',
                         style: TextStyle(
                           color: Theme.of(context).primaryColor,
                           fontSize: 13,
@@ -312,7 +312,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                       onPressed: _logMeal,
                       icon: const Icon(Icons.restaurant, color: Colors.white),
                       label: const Text(
-                        '✓ Съел / I Ate This',
+                        '✓ I Ate This',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -338,7 +338,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Заказ ингредиентов — скоро!'),
+                                content: const Text('Ingredient Ordering — Coming Soon!'),
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -348,7 +348,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                           },
                           icon: const Icon(Icons.shopping_basket_outlined),
                           label: const Text(
-                            'Ингредиенты',
+                            'Order Ingredients',
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           style: OutlinedButton.styleFrom(
@@ -368,7 +368,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Заказ из ресторана — скоро!'),
+                                content: const Text('Restaurant Ordering — Coming Soon!'),
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -378,7 +378,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                           },
                           icon: const Icon(Icons.delivery_dining),
                           label: const Text(
-                            'Из ресторана',
+                            'From Restaurant',
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           style: OutlinedButton.styleFrom(

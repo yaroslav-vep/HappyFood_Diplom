@@ -21,7 +21,7 @@ class ChatViewModel extends StateNotifier<List<ChatMessage>> {
     // Add initial greeting (optional)
     state = [
       ChatMessage.ai(
-        "Hello! I'm your personal nutrition assistant. How can I help you today?",
+        "Hello! I am your personal nutrition assistant. How can I help you today?",
       ),
     ];
   }

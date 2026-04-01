@@ -85,7 +85,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Edit Profile',
+                    'Change Profile',
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: Theme.of(context).primaryColor,
                     ),
@@ -147,7 +147,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ],
             ),
             const SizedBox(height: 32),
-            _buildSectionTitle(context, 'Goals & Activity'),
+            _buildSectionTitle(context, 'Goal & Activity'),
             _buildDropdown(
               context,
               label: 'Activity Level',
@@ -202,7 +202,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   Divider(color: AppTheme.dividerColor), // Barely visible
                   user.allergies.isEmpty
                       ? Text(
-                          'No allergies listed.',
+                          'No allergies specified.',
                           style: TextStyle(color: AppTheme.textSecondary),
                         )
                       : Wrap(

@@ -91,7 +91,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                     controller: _controller,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Добавить продукт (например, Яйца)',
+                      hintText: 'Add product (e.g., Eggs)',
                       hintStyle: const TextStyle(color: Colors.grey),
                       filled: true,
                       fillColor: Theme.of(context).cardColor,
@@ -135,7 +135,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'Добавьте продукты,\nчтобы увидеть подходящие блюда',
+                          'Add products,\nto see matching recipes',
                           style: TextStyle(color: Colors.grey, fontSize: 15),
                           textAlign: TextAlign.center,
                         ),
@@ -152,7 +152,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Мои продукты (${products.length})',
+                                'My Products (${products.length})',
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                               const SizedBox(height: 8),
@@ -202,7 +202,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                           child: Row(
                             children: [
                               Text(
-                                'Подходящие блюда',
+                                'Matching Recipes',
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                               const SizedBox(width: 8),
@@ -244,7 +244,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                                   ),
                                   const SizedBox(height: 12),
                                   const Text(
-                                    'Нет блюд с этими продуктами.\nДобавьте ещё!',
+                                    'No recipes with these products.\nAdd more!',
                                     style: TextStyle(color: Colors.grey),
                                     textAlign: TextAlign.center,
                                   ),
@@ -361,7 +361,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Text(
-                              '✓ Всё есть',
+                              '✓ Have All',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
@@ -373,7 +373,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${recipe.calories} ккал  •  Б:${recipe.protein}г  Ж:${recipe.fats}г  У:${recipe.carbs}г',
+                      '${recipe.calories} kcal  •  P:${recipe.protein}g  F:${recipe.fats}g  C:${recipe.carbs}g',
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                     const SizedBox(height: 8),
