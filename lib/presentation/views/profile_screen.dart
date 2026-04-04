@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constant/app_theme.dart';
@@ -14,6 +15,29 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final TextEditingController _allergyController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _heightController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(userViewModelProvider);
+      _ageController.text = user.age.toString();
+      _heightController.text = user.height.toString();
+      _weightController.text = user.weight.toString();
+    });
+  }
+
+  @override
+  void dispose() {
+    _allergyController.dispose();
+    _ageController.dispose();
+    _heightController.dispose();
+    _weightController.dispose();
+    super.dispose();
+  }
 
   void _addAllergy() {
     if (_allergyController.text.isNotEmpty) {
@@ -36,11 +60,86 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     ref.read(userViewModelProvider.notifier).updateAllergies(currentAllergies);
   }
 
+  void _showPicker({
+    required String title,
+    required int minValue,
+    required int maxValue,
+    required double initialValue,
+    required Function(double) onSelected,
+    bool isDouble = false,
+  }) {
+    int selectedIndex = (initialValue - minValue).toInt();
+    if (isDouble) {
+      // For double values, we'll just handle integers for simplicity in the wheel 
+      // or implement a more complex two-wheel picker. 
+      // User asked for "mini drum", integers are usually preferred for these ranges.
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SizedBox(
+          height: 300,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+                    ),
+                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    TextButton(
+                      onPressed: () {
+                        onSelected(selectedIndex.toDouble() + minValue);
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: CupertinoPicker(
+                  itemExtent: 40,
+                  scrollController: FixedExtentScrollController(initialItem: selectedIndex),
+                  onSelectedItemChanged: (index) {
+                    selectedIndex = index;
+                  },
+                  children: List.generate(maxValue - minValue + 1, (index) {
+                    return Center(
+                      child: Text(
+                        '${index + minValue}',
+                        style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(userViewModelProvider);
     final userViewModel = ref.read(userViewModelProvider.notifier);
     final theme = Theme.of(context);
+
+    // Sync controllers if model changes from elsewhere
+    _ageController.text = user.age.toString();
+    _heightController.text = user.height.toString();
+    _weightController.text = user.weight.toString();
 
     return Scaffold(
       appBar: AppBar(
@@ -59,9 +158,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(
-          24.0,
-        ), // Increased from 20 for premium feel
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -70,22 +167,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: AppTheme.primaryColorLight, // Light green
+                    backgroundColor: AppTheme.primaryColorLight,
                     backgroundImage: const NetworkImage(
                       'https://i.pravatar.cc/300',
                     ),
-                    onBackgroundImageError: (_, __) {
-                      // Handle error silently or show icon
-                    },
                     child: Icon(
                       Icons.person,
                       size: 50,
-                      color: AppTheme.primaryColor, // Soft green
+                      color: AppTheme.primaryColor,
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Change Profile',
+                    'Update Photo',
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: Theme.of(context).primaryColor,
                     ),
@@ -94,7 +188,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 32),
-
             _buildSectionTitle(context, 'Personal Details'),
             _buildDropdown(
               context,
@@ -110,38 +203,53 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: _buildTextField(
                     context,
                     label: 'Age',
-                    value: user.age.toString(),
-                    keyboardType: TextInputType.number,
+                    controller: _ageController,
                     onChanged: (val) {
-                      if (val.isNotEmpty)
-                        userViewModel.updateAge(int.parse(val));
+                      if (val.isNotEmpty) userViewModel.updateAge(int.parse(val));
                     },
+                    onPickerTap: () => _showPicker(
+                      title: 'Select Age',
+                      minValue: 1,
+                      maxValue: 120,
+                      initialValue: user.age.toDouble(),
+                      onSelected: (val) => userViewModel.updateAge(val.toInt()),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(
                   child: _buildTextField(
                     context,
-                    label: 'Height (cm)',
-                    value: user.height.toString(),
-                    keyboardType: TextInputType.number,
+                    label: 'H (cm)',
+                    controller: _heightController,
                     onChanged: (val) {
-                      if (val.isNotEmpty)
-                        userViewModel.updateHeight(double.parse(val));
+                      if (val.isNotEmpty) userViewModel.updateHeight(double.parse(val));
                     },
+                    onPickerTap: () => _showPicker(
+                      title: 'Select Height',
+                      minValue: 50,
+                      maxValue: 250,
+                      initialValue: user.height,
+                      onSelected: (val) => userViewModel.updateHeight(val),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 Expanded(
                   child: _buildTextField(
                     context,
-                    label: 'Weight (kg)',
-                    value: user.weight.toString(),
-                    keyboardType: TextInputType.number,
+                    label: 'W (kg)',
+                    controller: _weightController,
                     onChanged: (val) {
-                      if (val.isNotEmpty)
-                        userViewModel.updateWeight(double.parse(val));
+                      if (val.isNotEmpty) userViewModel.updateWeight(double.parse(val));
                     },
+                    onPickerTap: () => _showPicker(
+                      title: 'Select Weight',
+                      minValue: 20,
+                      maxValue: 300,
+                      initialValue: user.weight,
+                      onSelected: (val) => userViewModel.updateWeight(val),
+                    ),
                   ),
                 ),
               ],
@@ -180,7 +288,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: TextField(
                           controller: _allergyController,
                           decoration: const InputDecoration(
-                            hintText: 'Add ingredient (e.g., Peanuts, Milk)',
+                            hintText: 'Add ingredient',
                             hintStyle: TextStyle(color: Colors.grey),
                             border: InputBorder.none,
                           ),
@@ -199,34 +307,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ],
                   ),
-                  Divider(color: AppTheme.dividerColor), // Barely visible
+                  Divider(color: AppTheme.dividerColor),
                   user.allergies.isEmpty
                       ? Text(
                           'No allergies specified.',
                           style: TextStyle(color: AppTheme.textSecondary),
                         )
                       : Wrap(
-                          spacing: 12, // Increased spacing
-                          runSpacing: 8,
+                          spacing: 8,
+                          runSpacing: 4,
                           children: user.allergies
                               .map(
                                 (allergy) => Chip(
                                   label: Text(allergy),
-                                  backgroundColor: const Color(
-                                    0xFFFFF5F3,
-                                  ), // Light peachy-pink
+                                  backgroundColor: const Color(0xFFFFF5F3),
                                   side: BorderSide(
                                     color: AppTheme.errorColor,
                                     width: 1,
                                   ),
                                   labelStyle: TextStyle(
-                                    color:
-                                        AppTheme.errorColor, // Soft peachy-red
+                                    color: AppTheme.errorColor,
                                     fontWeight: FontWeight.w500,
                                   ),
                                   deleteIcon: Icon(
                                     Icons.close,
-                                    size: 16,
+                                    size: 14,
                                     color: AppTheme.errorColor,
                                   ),
                                   onDeleted: () => _removeAllergy(allergy),
@@ -248,9 +353,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Text(
         title,
-        style: Theme.of(
-          context,
-        ).textTheme.titleLarge?.copyWith(color: Theme.of(context).primaryColor),
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: Theme.of(context).primaryColor,
+              fontWeight: FontWeight.bold,
+            ),
       ),
     );
   }
@@ -262,10 +368,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     required List<String> items,
     required Function(String?) onChanged,
   }) {
-    // Ensure value exists in items to prevent crash
-    final safeValue = items.contains(value)
-        ? value
-        : (items.isNotEmpty ? items.first : null);
+    final safeValue = items.contains(value) ? value : (items.isNotEmpty ? items.first : null);
 
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(
@@ -290,24 +393,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _buildTextField(
     BuildContext context, {
     required String label,
-    required String value,
-    required TextInputType keyboardType,
+    required TextEditingController controller,
     required Function(String) onChanged,
+    required VoidCallback onPickerTap,
   }) {
     return TextFormField(
-      initialValue: value,
+      controller: controller,
       style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.grey[400]),
+        labelStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
         filled: true,
         fillColor: Theme.of(context).cardColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
+        suffixIcon: IconButton(
+          icon: Icon(Icons.unfold_more, color: Theme.of(context).primaryColor, size: 20),
+          onPressed: onPickerTap,
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
       ),
-      keyboardType: keyboardType,
+      keyboardType: TextInputType.number,
       onChanged: onChanged,
     );
   }
