@@ -5,7 +5,8 @@ import '../models/user_model.dart';
 
 class ChatRepository {
   // Local Gemini proxy server (node server.js running on port 3000)
-  static const String _baseUrl = 'https://ai-proxy-server-production-bfd3.up.railway.app/chat';
+  static const String _baseUrl =
+      'https://ai-proxy-server-production-bfd3.up.railway.app/chat';
 
   Future<ChatMessage> sendMessage(String message, UserModel? profile) async {
     try {

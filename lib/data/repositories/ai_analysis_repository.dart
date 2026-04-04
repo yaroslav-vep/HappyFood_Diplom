@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http;
 import '../models/food_analysis_model.dart';
 
 class AiAnalysisRepository {
-  static const String _baseUrl = 'https://ai-proxy-server-production-bfd3.up.railway.app/analyze-food-image';
+  static const String _baseUrl =
+      'https://ai-proxy-server-production-bfd3.up.railway.app/analyze-food-image';
 
   Future<FoodAnalysisModel> analyzeImage({
     required String base64Image,
@@ -14,10 +15,7 @@ class AiAnalysisRepository {
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'imageBase64': base64Image,
-        'mimeType': mimeType,
-      }),
+      body: jsonEncode({'imageBase64': base64Image, 'mimeType': mimeType}),
     );
 
     if (response.statusCode == 200) {
