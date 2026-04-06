@@ -6,6 +6,9 @@ import 'dart:html' as html;
 import '../../core/constant/app_theme.dart';
 import '../viewmodels/ai_analysis_viewmodel.dart';
 import '../../data/models/food_analysis_model.dart';
+import '../../data/models/recipe_model.dart';
+import '../viewmodels/nutrition_viewmodel.dart';
+import '../../core/localization/app_localizations.dart';
 
 class AIFoodAnalysisScreen extends ConsumerStatefulWidget {
   const AIFoodAnalysisScreen({super.key});
@@ -89,6 +92,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
   Widget build(BuildContext context) {
     final state = ref.watch(aiAnalysisViewModelProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final lang = ref.watch(languageProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -114,7 +118,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'AI Food Analysis',
+                  tr('aiFoodAnalysis', lang),
                   style: TextStyle(
                     color: AppTheme.textPrimary,
                     fontSize: 18,
@@ -122,7 +126,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
                   ),
                 ),
                 Text(
-                  'Powered by Gemini Vision',
+                  tr('poweredByGemini', lang),
                   style:
                       TextStyle(color: AppTheme.textSecondary, fontSize: 11),
                 ),
@@ -141,11 +145,11 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // ─── Image Zone ───────────────────────────────────────────────
-            _buildImageZone(state, isDark),
+            _buildImageZone(state, isDark, lang),
             const SizedBox(height: 16),
 
             // ─── Action Buttons ───────────────────────────────────────────
-            _buildActionButtons(state),
+            _buildActionButtons(state, lang),
             const SizedBox(height: 24),
 
             // ─── Results ─────────────────────────────────────────────────
@@ -156,7 +160,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
                 state.result != null)
               FadeTransition(
                 opacity: _fadeAnimation,
-                child: _buildResultSection(state.result!),
+                child: _buildResultSection(state.result!, lang),
               ),
           ],
         ),
@@ -165,7 +169,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
   }
 
   // ─── Image Preview Zone ──────────────────────────────────────────────────
-  Widget _buildImageZone(AnalysisState state, bool isDark) {
+  Widget _buildImageZone(AnalysisState state, bool isDark, String lang) {
     return GestureDetector(
       onTap: state.status == AnalysisStatus.loading ? null : _pickImage,
       child: AnimatedContainer(
@@ -190,13 +194,13 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(23),
-          child: _buildImageContent(state),
+          child: _buildImageContent(state, lang),
         ),
       ),
     );
   }
 
-  Widget _buildImageContent(AnalysisState state) {
+  Widget _buildImageContent(AnalysisState state, String lang) {
     if (state.status == AnalysisStatus.loading) {
       return Center(
         child: Column(
@@ -212,7 +216,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
             ),
             const SizedBox(height: 20),
             Text(
-              'Analyzing dish...',
+              tr('analyzingDish', lang),
               style: TextStyle(
                 color: AppTheme.textPrimary,
                 fontSize: 16,
@@ -221,7 +225,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Gemini is scanning ingredients',
+              tr('geminiScanning', lang),
               style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
             ),
           ],
@@ -254,15 +258,15 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
                   ],
                 ),
               ),
-              child: const Row(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.touch_app_rounded,
-                      color: Colors.white70, size: 16),
-                  SizedBox(width: 6),
+                  const Icon(Icons.edit, color: Colors.white70, size: 16),
+                  const SizedBox(width: 6),
                   Text(
-                    'Tap to change photo',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                    tr('tapToChangePhoto', lang),
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ],
               ),
@@ -289,7 +293,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
         ),
         const SizedBox(height: 16),
         Text(
-          'Upload food photo',
+          tr('uploadFoodPhoto', lang),
           style: TextStyle(
             color: AppTheme.textPrimary,
             fontSize: 16,
@@ -298,7 +302,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
         ),
         const SizedBox(height: 8),
         Text(
-          'AI will identify nutritional values and recipe',
+          tr('aiWillIdentify', lang),
           style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
         ),
       ],
@@ -306,7 +310,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
   }
 
   // ─── Action Buttons ───────────────────────────────────────────────────────
-  Widget _buildActionButtons(AnalysisState state) {
+  Widget _buildActionButtons(AnalysisState state, String lang) {
     final isLoading = state.status == AnalysisStatus.loading;
 
     return Row(
@@ -315,7 +319,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
           child: OutlinedButton.icon(
             onPressed: isLoading ? null : _pickImage,
             icon: const Icon(Icons.photo_library_outlined),
-            label: const Text('Pick Photo'),
+            label: Text(tr('pickPhoto', lang)),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.primaryColor,
               side: BorderSide(color: AppTheme.primaryColor),
@@ -339,7 +343,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
                         CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
                 : const Icon(Icons.auto_awesome_rounded),
-            label: Text(isLoading ? 'Analyzing...' : 'Analyze'),
+            label: Text(isLoading ? tr('analyzing', lang) : tr('analyze', lang)),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
@@ -380,7 +384,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
   }
 
   // ─── Results Section ──────────────────────────────────────────────────────
-  Widget _buildResultSection(FoodAnalysisModel result) {
+  Widget _buildResultSection(FoodAnalysisModel result, String lang) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -417,7 +421,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
               ),
               const SizedBox(height: 4),
               Text(
-                'Approximate composition',
+                tr('approximateComposition', lang),
                 style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13),
               ),
             ],
@@ -428,16 +432,16 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
         // Macros Row
         Row(
           children: [
-            _buildKbjuCard('🔥', 'Calories', '${result.calories}', 'kcal',
+            _buildKbjuCard('🔥', tr('calories', lang), '${result.calories}', 'kcal',
                 const Color(0xFFFF6B35)),
             const SizedBox(width: 10),
-            _buildKbjuCard('💪', 'Protein', result.protein.toStringAsFixed(1),
+            _buildKbjuCard('💪', tr('protein', lang), result.protein.toStringAsFixed(1),
                 'g', const Color(0xFF4CAF50)),
             const SizedBox(width: 10),
-            _buildKbjuCard('🥑', 'Fats', result.fats.toStringAsFixed(1), 'g',
+            _buildKbjuCard('🥑', tr('fats', lang), result.fats.toStringAsFixed(1), 'g',
                 const Color(0xFFFFC107)),
             const SizedBox(width: 10),
-            _buildKbjuCard('🌾', 'Carbs', result.carbs.toStringAsFixed(1),
+            _buildKbjuCard('🌾', tr('carbs', lang), result.carbs.toStringAsFixed(1),
                 'g', const Color(0xFF2196F3)),
           ],
         ),
@@ -446,7 +450,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
         // Ingredients Expandable
         _buildExpandableCard(
           icon: Icons.list_alt_rounded,
-          title: 'Ingredients',
+          title: tr('ingredients', lang),
           count: result.ingredients.length,
           isExpanded: _ingredientsExpanded,
           onToggle: () =>
@@ -499,7 +503,7 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
         // Instructions Expandable
         _buildExpandableCard(
           icon: Icons.menu_book_rounded,
-          title: 'How to prepare',
+          title: tr('howToPrepare', lang),
           count: result.instructions.length,
           isExpanded: _instructionsExpanded,
           onToggle: () =>
@@ -557,6 +561,20 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
         // Add to diary button
         ElevatedButton.icon(
           onPressed: () {
+            // Add the dish to the diary using the nutrition view model
+            final recipe = RecipeModel(
+              title: result.dishName,
+              description: tr('addedFromAI', lang),
+              ingredients: result.ingredients,
+              calories: result.calories,
+              protein: result.protein.toInt(),
+              fats: result.fats.toInt(),
+              carbs: result.carbs.toInt(),
+              imageUrl: '', // We don't have a specific URL yet
+              steps: result.instructions,
+            );
+            ref.read(nutritionViewModelProvider.notifier).addEatenMeal(recipe);
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
@@ -572,9 +590,9 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
             Navigator.pop(context);
           },
           icon: const Icon(Icons.add_circle_outline_rounded),
-          label: const Text(
-            'Add to Diary',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          label: Text(
+            tr('addToDiary', lang),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF4CAF50),

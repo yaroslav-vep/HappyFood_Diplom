@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/auth_state.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../../core/constant/app_theme.dart';
+import '../../core/localization/app_localizations.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -15,28 +16,40 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authViewModelProvider);
+    final lang = ref.watch(languageProvider);
 
-    // Listen to state changes to pop the screen if authenticated (registered successfully)
     ref.listen(authViewModelProvider, (previous, next) {
       if (next.status == AuthStatus.authenticated) {
-        // If successful, we can just pop because main.dart will see the state change and show MainScreen
-        // But since we are pushed on top of LoginScreen, likely we want to pop everything or let MainScreen take over.
-        // If we pop, we go back to LoginScreen which might be confusing if MainScreen is what we want.
-        // The Root widget will rebuild and show MainScreen, removing LoginScreen/RegisterScreen from view if structured correctly.
-        // However, if we utilize Navigator.push, the new MainScreen might be pushed or the current stack remains.
-        // We will rely on AuthWrapper in main.dart to handle the switch.
-        // So here we might not need to do anything if AuthWrapper rebuilds the whole tree.
-        // But to be clean, let's pop.
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
+      appBar: AppBar(
+        title: Text(tr('register', lang)),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildLangChip(context, 'ENG', lang),
+                _buildLangChip(context, 'RU', lang),
+              ],
+            ),
+          ),
+        ],
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -45,36 +58,44 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Join HappyFood',
+                tr('join', lang),
                 style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
               TextField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(Icons.email),
+                decoration: InputDecoration(
+                  labelText: tr('email', lang),
+                  prefixIcon: const Icon(Icons.email),
                 ),
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: Icon(Icons.lock),
+                decoration: InputDecoration(
+                  labelText: tr('password', lang),
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  ),
                 ),
-                obscureText: true,
+                obscureText: _obscurePassword,
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: _confirmPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm Password',
-                  prefixIcon: Icon(Icons.lock_outline),
+                decoration: InputDecoration(
+                  labelText: tr('confirmPassword', lang),
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility),
+                    onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                  ),
                 ),
-                obscureText: true,
+                obscureText: _obscureConfirmPassword,
               ),
               const SizedBox(height: 24),
               if (authState.isLoading)
@@ -82,34 +103,50 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               else
                 ElevatedButton(
                   onPressed: () {
-                    if (_passwordController.text ==
-                        _confirmPasswordController.text) {
-                      ref
-                          .read(authViewModelProvider.notifier)
-                          .register(
-                            _emailController.text,
-                            _passwordController.text,
-                          );
+                    if (_passwordController.text == _confirmPasswordController.text) {
+                      ref.read(authViewModelProvider.notifier)
+                          .register(_emailController.text, _passwordController.text);
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Passwords do not match')),
+                        SnackBar(content: Text(tr('passwordsMismatch', lang))),
                       );
                     }
                   },
-                  child: const Text('Register'),
+                  child: Text(tr('registerBtn', lang)),
                 ),
               if (authState.errorMessage != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 16),
                   child: Text(
                     authState.errorMessage!,
-                    style: TextStyle(
-                      color: AppTheme.errorColor,
-                    ), // Soft peachy-red
+                    style: TextStyle(color: AppTheme.errorColor),
                     textAlign: TextAlign.center,
                   ),
                 ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLangChip(BuildContext context, String label, String current) {
+    final isActive = current == label;
+    return GestureDetector(
+      onTap: () => ref.read(languageProvider.notifier).state = label,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isActive ? Theme.of(context).primaryColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? Colors.white : Theme.of(context).hintColor,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            fontSize: 13,
           ),
         ),
       ),

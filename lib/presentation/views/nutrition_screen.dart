@@ -4,6 +4,7 @@ import '../viewmodels/nutrition_viewmodel.dart';
 import '../../data/models/eaten_meal_model.dart';
 import 'dart:math' as math;
 import 'profile_screen.dart';
+import '../../core/localization/app_localizations.dart';
 
 class NutritionScreen extends ConsumerWidget {
   const NutritionScreen({super.key});
@@ -12,6 +13,7 @@ class NutritionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final nutrition = ref.watch(nutritionViewModelProvider);
     final notifier = ref.read(nutritionViewModelProvider.notifier);
+    final lang = ref.watch(languageProvider);
 
     final consumed = nutrition.calories;
     final target = nutrition.targetCalories > 0 ? nutrition.targetCalories : 2000;
@@ -19,25 +21,23 @@ class NutritionScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Nutrition'),
+        title: Text(tr('nutrition', lang)),
         centerTitle: false,
         actions: [
           if (nutrition.eatenMeals.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.refresh),
-              tooltip: 'Reset diary',
+              tooltip: tr('resetDiary', lang),
               onPressed: () {
                 showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
-                    title: const Text('Reset diary?'),
-                    content: const Text(
-                      'All meal records for today will be deleted.',
-                    ),
+                    title: Text(tr('resetDiaryTitle', lang)),
+                    content: Text(tr('resetDiaryContent', lang)),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Cancel'),
+                        child: Text(tr('cancel', lang)),
                       ),
                       ElevatedButton(
                         onPressed: () {
@@ -47,9 +47,9 @@ class NutritionScreen extends ConsumerWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red[700],
                         ),
-                        child: const Text(
-                          'Reset',
-                          style: TextStyle(color: Colors.white),
+                        child: Text(
+                          tr('reset', lang),
+                          style: const TextStyle(color: Colors.white),
                         ),
                       ),
                     ],
@@ -106,7 +106,8 @@ class NutritionScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        'of $target kcal',
+                        tr('ofKcal', lang)
+                            .replaceAll('{target}', '$target'),
                         style: const TextStyle(
                           fontSize: 13,
                           color: Colors.grey,
@@ -142,8 +143,10 @@ class NutritionScreen extends ConsumerWidget {
                   const SizedBox(width: 6),
                   Text(
                     consumed > target
-                        ? 'Exceeded by ${consumed - target} kcal'
-                        : '${target - consumed} kcal left',
+                        ? tr('exceededBy', lang)
+                            .replaceAll('{val}', '${consumed - target}')
+                        : tr('kcalLeft', lang)
+                            .replaceAll('{val}', '${target - consumed}'),
                     style: TextStyle(
                       fontSize: 13,
                       color: consumed > target
@@ -164,7 +167,7 @@ class NutritionScreen extends ConsumerWidget {
                 Expanded(
                   child: _buildMacroCard(
                     context,
-                    'Protein',
+                    tr('protein', lang),
                     '${nutrition.protein}g',
                     '/ ${nutrition.targetProtein}g',
                     Colors.blueAccent,
@@ -178,7 +181,7 @@ class NutritionScreen extends ConsumerWidget {
                 Expanded(
                   child: _buildMacroCard(
                     context,
-                    'Fats',
+                    tr('fats', lang),
                     '${nutrition.fats}g',
                     '/ ${nutrition.targetFats}g',
                     Colors.orangeAccent,
@@ -192,7 +195,7 @@ class NutritionScreen extends ConsumerWidget {
                 Expanded(
                   child: _buildMacroCard(
                     context,
-                    'Carbs',
+                    tr('carbs', lang),
                     '${nutrition.carbs}g',
                     '/ ${nutrition.targetCarbs}g',
                     Colors.greenAccent,
@@ -209,24 +212,24 @@ class NutritionScreen extends ConsumerWidget {
 
             // Eaten meals log
             if (nutrition.eatenMeals.isEmpty)
-              _buildEmptyMealsHint(context)
+              _buildEmptyMealsHint(context, lang)
             else ...[
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Today\'s Meals',
+                    tr('todaysMeals', lang),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   Text(
-                    '${nutrition.eatenMeals.length} items',
+                    '${nutrition.eatenMeals.length} ${tr('items', lang)}',
                     style: const TextStyle(color: Colors.grey, fontSize: 13),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
               ...nutrition.eatenMeals.map(
-                (meal) => _buildMealLogCard(context, meal, ref),
+                (meal) => _buildMealLogCard(context, meal, ref, lang),
               ),
             ],
             const SizedBox(height: 20),
@@ -236,7 +239,7 @@ class NutritionScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyMealsHint(BuildContext context) {
+  Widget _buildEmptyMealsHint(BuildContext context, String lang) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -247,18 +250,18 @@ class NutritionScreen extends ConsumerWidget {
         children: [
           const Icon(Icons.restaurant_menu, size: 48, color: Colors.grey),
           const SizedBox(height: 12),
-          const Text(
-            'You haven\'t eaten anything yet today',
-            style: TextStyle(
+          Text(
+            tr('noMealsYet', lang),
+            style: const TextStyle(
               color: Colors.grey,
               fontSize: 15,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Open a recipe card and press "I Ate This"',
-            style: TextStyle(color: Colors.grey, fontSize: 13),
+          Text(
+            tr('openRecipeHint', lang),
+            style: const TextStyle(color: Colors.grey, fontSize: 13),
             textAlign: TextAlign.center,
           ),
         ],
@@ -270,6 +273,7 @@ class NutritionScreen extends ConsumerWidget {
     BuildContext context,
     EatenMealModel meal,
     WidgetRef ref,
+    String lang,
   ) {
     final timeStr =
         '${meal.eatenAt.hour.toString().padLeft(2, '0')}:${meal.eatenAt.minute.toString().padLeft(2, '0')}';
@@ -329,7 +333,7 @@ class NutritionScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${meal.recipe.calories} kcal  •  P:${meal.recipe.protein}g  F:${meal.recipe.fats}g  C:${meal.recipe.carbs}g',
+                    '${meal.recipe.calories} kcal  •  ${tr('protein', lang).substring(0, 1)}:${meal.recipe.protein}g  ${tr('fats', lang).substring(0, 1)}:${meal.recipe.fats}g  ${tr('carbs', lang).substring(0, 1)}:${meal.recipe.carbs}g',
                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                 ],

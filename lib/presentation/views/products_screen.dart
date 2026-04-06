@@ -7,6 +7,7 @@ import '../../data/models/recipe_model.dart';
 import '../../core/services/recipe_service.dart';
 import 'recipe_detail_screen.dart';
 import 'profile_screen.dart';
+import '../../core/localization/app_localizations.dart';
 
 class ProductsScreen extends ConsumerStatefulWidget {
   const ProductsScreen({super.key});
@@ -32,13 +33,11 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     if (products.isEmpty) return [];
     final names = products.map((p) => p.name.toLowerCase()).toSet();
     return _recipeService.allRecipes.where((recipe) {
-      // Show recipe if at least one ingredient matches
       return recipe.ingredients.any(
         (ing) => names.contains(ing.toLowerCase()),
       );
     }).toList()
       ..sort((a, b) {
-        // Sort by number of matching ingredients (more = better)
         final aMatches = a.ingredients
             .where((ing) => names.contains(ing.toLowerCase()))
             .length;
@@ -60,10 +59,11 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     final products = ref.watch(productsViewModelProvider);
     final matchingRecipes = _getMatchingRecipes(products);
     final productNames = products.map((p) => p.name.toLowerCase()).toSet();
+    final lang = ref.watch(languageProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Kitchen'),
+        title: Text(tr('myKitchen', lang)),
         centerTitle: false,
         actions: [
           IconButton(
@@ -91,7 +91,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                     controller: _controller,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Add product (e.g., Eggs)',
+                      hintText: tr('addProduct', lang),
                       hintStyle: const TextStyle(color: Colors.grey),
                       filled: true,
                       fillColor: Theme.of(context).cardColor,
@@ -134,9 +134,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                           color: Colors.grey[800],
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          'Add products,\nto see matching recipes',
-                          style: TextStyle(color: Colors.grey, fontSize: 15),
+                        Text(
+                          tr('addProductsHint', lang),
+                          style: const TextStyle(color: Colors.grey, fontSize: 15),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -152,7 +152,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'My Products (${products.length})',
+                                '${tr('myProducts', lang)} (${products.length})',
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                               const SizedBox(height: 8),
@@ -202,7 +202,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                           child: Row(
                             children: [
                               Text(
-                                'Matching Recipes',
+                                tr('matchingRecipes', lang),
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
                               const SizedBox(width: 8),
@@ -243,9 +243,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                                     color: Colors.grey[600],
                                   ),
                                   const SizedBox(height: 12),
-                                  const Text(
-                                    'No recipes with these products.\nAdd more!',
-                                    style: TextStyle(color: Colors.grey),
+                                  Text(
+                                    tr('noRecipesWithProducts', lang),
+                                    style: const TextStyle(color: Colors.grey),
                                     textAlign: TextAlign.center,
                                   ),
                                 ],
@@ -266,6 +266,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                                 recipe,
                                 matched,
                                 total,
+                                lang,
                               );
                             },
                             childCount: matchingRecipes.length,
@@ -286,6 +287,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     RecipeModel recipe,
     int matched,
     int total,
+    String lang,
   ) {
     final matchRatio = matched / total;
     final hasAll = matched == total;
@@ -360,9 +362,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                               color: Theme.of(context).primaryColor,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text(
-                              '✓ Have All',
-                              style: TextStyle(
+                            child: Text(
+                              tr('haveAll', lang),
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -373,7 +375,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${recipe.calories} kcal  •  P:${recipe.protein}g  F:${recipe.fats}g  C:${recipe.carbs}g',
+                      '${recipe.calories} kcal  •  ${tr('protein', lang).substring(0, 1)}:${recipe.protein}g  ${tr('fats', lang).substring(0, 1)}:${recipe.fats}g  ${tr('carbs', lang).substring(0, 1)}:${recipe.carbs}g',
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                     const SizedBox(height: 8),

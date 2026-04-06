@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'nutrition_screen.dart';
 import 'products_screen.dart';
 import 'recipes_screen.dart';
 import 'ai_chat_screen.dart';
 import 'ai_food_analysis_screen.dart';
+import '../../core/localization/app_localizations.dart';
 
-class MainScreen extends StatefulWidget {
+class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
 
   @override
-  State<MainScreen> createState() => _MainScreenState();
+  ConsumerState<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends ConsumerState<MainScreen> {
   int _selectedIndex = 0;
 
   static const List<Widget> _screens = [
@@ -29,6 +31,8 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = ref.watch(languageProvider);
+
     return Scaffold(
       body: _screens[_selectedIndex],
       floatingActionButton: Column(
@@ -80,21 +84,21 @@ class _MainScreenState extends State<MainScreen> {
           type: BottomNavigationBarType.fixed,
           currentIndex: _selectedIndex,
           onTap: _onItemTapped,
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.pie_chart_outline),
-              activeIcon: Icon(Icons.pie_chart),
-              label: 'Nutrition',
+              icon: const Icon(Icons.pie_chart_outline),
+              activeIcon: const Icon(Icons.pie_chart),
+              label: tr('nutrition', lang),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.kitchen_outlined),
-              activeIcon: Icon(Icons.kitchen),
-              label: 'Kitchen',
+              icon: const Icon(Icons.kitchen_outlined),
+              activeIcon: const Icon(Icons.kitchen),
+              label: tr('kitchen', lang),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.menu_book_outlined),
-              activeIcon: Icon(Icons.menu_book),
-              label: 'Recipes',
+              icon: const Icon(Icons.menu_book_outlined),
+              activeIcon: const Icon(Icons.menu_book),
+              label: tr('recipes', lang),
             ),
           ],
         ),

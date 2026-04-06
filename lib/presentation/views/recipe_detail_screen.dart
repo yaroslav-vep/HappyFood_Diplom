@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/recipe_model.dart';
 import '../viewmodels/nutrition_viewmodel.dart';
+import '../../core/localization/app_localizations.dart';
 
 class RecipeDetailScreen extends ConsumerStatefulWidget {
   final RecipeModel recipe;
@@ -38,6 +39,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
   }
 
   void _logMeal() {
+    final lang = ref.read(languageProvider);
     ref.read(nutritionViewModelProvider.notifier).addEatenMeal(widget.recipe);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -47,7 +49,8 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                '«${widget.recipe.title}» added to nutrition diary!',
+                tr('addedToDiary', lang)
+                    .replaceAll('{name}', widget.recipe.title),
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
@@ -65,6 +68,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
   Widget build(BuildContext context) {
     final recipe = widget.recipe;
     final isAllergic = widget.isAllergic;
+    final lang = ref.watch(languageProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -121,15 +125,15 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                         color: Colors.red,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.warning, color: Colors.white),
-                          SizedBox(width: 10),
+                          const Icon(Icons.warning, color: Colors.white),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Contains allergens that match your profile!',
-                              style: TextStyle(
+                              tr('containsAllergens', lang),
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -160,15 +164,15 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                   const SizedBox(height: 30),
 
                   // Nutrition info
-                  _buildSectionTitle(context, 'Nutritional Value (per serving)'),
+                  _buildSectionTitle(context, tr('nutritionalValue', lang)),
                   const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildInfoColumn(context, 'Calories', '${recipe.calories}', 'kcal', Colors.orange),
-                      _buildInfoColumn(context, 'Protein', '${recipe.protein}', 'g', Colors.blue),
-                      _buildInfoColumn(context, 'Fats', '${recipe.fats}', 'g', Colors.yellow),
-                      _buildInfoColumn(context, 'Carbs', '${recipe.carbs}', 'g', Colors.green),
+                      _buildInfoColumn(context, tr('calories', lang), '${recipe.calories}', 'kcal', Colors.orange),
+                      _buildInfoColumn(context, tr('protein', lang), '${recipe.protein}', 'g', Colors.blue),
+                      _buildInfoColumn(context, tr('fats', lang), '${recipe.fats}', 'g', Colors.yellow),
+                      _buildInfoColumn(context, tr('carbs', lang), '${recipe.carbs}', 'g', Colors.green),
                     ],
                   ),
                   const SizedBox(height: 30),
@@ -176,10 +180,10 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                   // Ingredients with checkboxes
                   Row(
                     children: [
-                      _buildSectionTitle(context, 'Ingredients'),
+                      _buildSectionTitle(context, tr('ingredients', lang)),
                       const Spacer(),
                       Text(
-                        '${_checkedIngredients.length}/${recipe.ingredients.length} have',
+                        '${_checkedIngredients.length}/${recipe.ingredients.length} ${tr('have', lang)}',
                         style: TextStyle(
                           color: Theme.of(context).primaryColor,
                           fontSize: 13,
@@ -281,7 +285,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                   const SizedBox(height: 30),
 
                   // Cooking steps
-                  _buildSectionTitle(context, 'Cooking Steps'),
+                  _buildSectionTitle(context, tr('cookingSteps', lang)),
                   const SizedBox(height: 10),
                   ListView.separated(
                     shrinkWrap: true,
@@ -311,9 +315,9 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _logMeal,
                       icon: const Icon(Icons.restaurant, color: Colors.white),
-                      label: const Text(
-                        '✓ I Ate This',
-                        style: TextStyle(
+                      label: Text(
+                        tr('iAteThis', lang),
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -338,7 +342,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Ingredient Ordering — Coming Soon!'),
+                                content: Text(tr('ingredientOrdering', lang)),
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -347,9 +351,9 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                             );
                           },
                           icon: const Icon(Icons.shopping_basket_outlined),
-                          label: const Text(
-                            'Order Ingredients',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                          label: Text(
+                            tr('orderIngredients', lang),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
@@ -368,7 +372,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('Restaurant Ordering — Coming Soon!'),
+                                content: Text(tr('restaurantOrdering', lang)),
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -377,9 +381,9 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                             );
                           },
                           icon: const Icon(Icons.delivery_dining),
-                          label: const Text(
-                            'From Restaurant',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                          label: Text(
+                            tr('fromRestaurant', lang),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),

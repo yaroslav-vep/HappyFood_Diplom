@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../viewmodels/recipes_viewmodel.dart';
-import '../viewmodels/user_viewmodel.dart'; // To get allergies
+import '../viewmodels/user_viewmodel.dart';
 import '../../data/models/recipe_model.dart';
 import 'recipe_detail_screen.dart';
 import '../../core/constant/app_theme.dart';
 import 'profile_screen.dart';
+import '../../core/localization/app_localizations.dart';
 
 class RecipesScreen extends ConsumerStatefulWidget {
   const RecipesScreen({super.key});
@@ -29,10 +30,11 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
     final recipes = ref.watch(recipesViewModelProvider);
     final viewModel = ref.read(recipesViewModelProvider.notifier);
     final user = ref.watch(userViewModelProvider);
+    final lang = ref.watch(languageProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Recipes'),
+        title: Text(tr('recipes', lang)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(
@@ -40,7 +42,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search dishes...',
+                hintText: tr('searchDishes', lang),
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 fillColor: Theme.of(context).cardColor,
@@ -84,14 +86,14 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                     color: Colors.grey[800],
                   ),
                   const SizedBox(height: 16),
-                   const Text(
-                    'No recipes found.',
-                    style: TextStyle(color: Colors.grey),
+                  Text(
+                    tr('noRecipesFound', lang),
+                    style: const TextStyle(color: Colors.grey),
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () => viewModel.generateRecommendations(),
-                    child: const Text('Generate Recommendations'),
+                    child: Text(tr('generateRecommendations', lang)),
                   ),
                 ],
               ),
@@ -110,7 +112,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                   ),
                 );
 
-                return _buildRecipeCard(context, recipe, isAllergic);
+                return _buildRecipeCard(context, recipe, isAllergic, lang);
               },
             ),
     );
@@ -120,6 +122,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
     BuildContext context,
     RecipeModel recipe,
     bool isAllergic,
+    String lang,
   ) {
     return GestureDetector(
       onTap: () {
@@ -135,20 +138,18 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
         margin: const EdgeInsets.only(bottom: 20),
         decoration: BoxDecoration(
           color: isAllergic
-              ? const Color(0xFFFFF5F3) // Very light peachy-pink
+              ? const Color(0xFFFFF5F3)
               : Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(16), // 16px for consistency
+          borderRadius: BorderRadius.circular(16),
           border: isAllergic
               ? Border.all(
                   color: AppTheme.errorColor,
                   width: 1.5,
-                ) // Soft peachy-red
+                )
               : null,
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryColor.withOpacity(
-                0.04,
-              ), // Soft green-tinted shadow
+              color: AppTheme.primaryColor.withOpacity(0.04),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -167,7 +168,6 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                 image: DecorationImage(
                   image: NetworkImage(recipe.imageUrl),
                   fit: BoxFit.cover,
-                  // Simple error handler for the image
                   onError: (exception, stackTrace) {},
                 ),
               ),
@@ -183,7 +183,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                   ),
                 ),
                 alignment: Alignment.bottomLeft,
-                padding: const EdgeInsets.all(20), // Increased padding
+                padding: const EdgeInsets.all(20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -193,7 +193,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 22,
-                          fontWeight: FontWeight.w600, // Semibold, not bold
+                          fontWeight: FontWeight.w600,
                           shadows: [Shadow(color: Colors.black, blurRadius: 4)],
                         ),
                       ),
@@ -202,7 +202,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.errorColor, // Soft peachy-red
+                          color: AppTheme.errorColor,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -216,9 +216,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(
-                20.0,
-              ), // Increased padding for breathing room
+              padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -227,24 +225,22 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                       Icon(
                         Icons.flash_on,
                         size: 16,
-                        color: Theme.of(context).primaryColor, // Soft green
+                        color: Theme.of(context).primaryColor,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         '${recipe.calories} kcal',
                         style: TextStyle(
-                          fontWeight: FontWeight.w600, // Semibold
-                          color: Theme.of(
-                            context,
-                          ).primaryColor, // Green for emphasis
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).primaryColor,
                         ),
                       ),
                       const SizedBox(width: 16),
                       Text(
-                        'P: ${recipe.protein}g  F: ${recipe.fats}g  C: ${recipe.carbs}g',
+                        '${tr('protein', lang).substring(0, 1)}: ${recipe.protein}g  ${tr('fats', lang).substring(0, 1)}: ${recipe.fats}g  ${tr('carbs', lang).substring(0, 1)}: ${recipe.carbs}g',
                         style: TextStyle(
                           color: AppTheme.textSecondary,
-                        ), // Muted green-gray
+                        ),
                       ),
                     ],
                   ),
@@ -253,16 +249,15 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                     recipe.description,
                     style: TextStyle(
                       color: AppTheme.textSecondary,
-                    ), // Muted green-gray
+                    ),
                   ),
                   const SizedBox(height: 12),
-                  // Showing ingredients preview
                   Text(
-                    'Ingredients: ${recipe.ingredients.take(3).join(", ")}${recipe.ingredients.length > 3 ? "..." : ""}',
+                    '${tr('ingredients', lang)}: ${recipe.ingredients.take(3).join(", ")}${recipe.ingredients.length > 3 ? "..." : ""}',
                     style: TextStyle(
                       color: AppTheme.textTertiary,
                       fontSize: 12,
-                    ), // Very light
+                    ),
                   ),
                 ],
               ),

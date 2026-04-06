@@ -5,6 +5,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constant/app_theme.dart';
 import '../viewmodels/user_viewmodel.dart';
 import 'settings_screen.dart';
+import '../../core/localization/app_localizations.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -66,14 +67,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     required int maxValue,
     required double initialValue,
     required Function(double) onSelected,
-    bool isDouble = false,
   }) {
+    final lang = ref.read(languageProvider);
     int selectedIndex = (initialValue - minValue).toInt();
-    if (isDouble) {
-      // For double values, we'll just handle integers for simplicity in the wheel 
-      // or implement a more complex two-wheel picker. 
-      // User asked for "mini drum", integers are usually preferred for these ranges.
-    }
 
     showModalBottomSheet(
       context: context,
@@ -93,7 +89,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: Text('Cancel', style: TextStyle(color: AppTheme.textSecondary)),
+                      child: Text(tr('cancel', lang), style: TextStyle(color: AppTheme.textSecondary)),
                     ),
                     Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                     TextButton(
@@ -101,7 +97,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         onSelected(selectedIndex.toDouble() + minValue);
                         Navigator.pop(context);
                       },
-                      child: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(tr('confirm', lang), style: const TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -135,6 +131,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = ref.watch(userViewModelProvider);
     final userViewModel = ref.read(userViewModelProvider.notifier);
     final theme = Theme.of(context);
+    final lang = ref.watch(languageProvider);
 
     // Sync controllers if model changes from elsewhere
     _ageController.text = user.age.toString();
@@ -143,7 +140,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(tr('profile', lang)),
         centerTitle: false,
         actions: [
           IconButton(
@@ -179,7 +176,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Update Photo',
+                    tr('updatePhoto', lang),
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: Theme.of(context).primaryColor,
                     ),
@@ -188,10 +185,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            _buildSectionTitle(context, 'Personal Details'),
+            _buildSectionTitle(context, tr('personalDetails', lang)),
             _buildDropdown(
               context,
-              label: 'Gender',
+              label: tr('gender', lang),
               value: user.gender,
               items: ['Male', 'Female', 'Other'],
               onChanged: (val) => userViewModel.updateGender(val!),
@@ -202,13 +199,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Expanded(
                   child: _buildTextField(
                     context,
-                    label: 'Age',
+                    label: tr('age', lang),
                     controller: _ageController,
                     onChanged: (val) {
                       if (val.isNotEmpty) userViewModel.updateAge(int.parse(val));
                     },
                     onPickerTap: () => _showPicker(
-                      title: 'Select Age',
+                      title: tr('selectAge', lang),
                       minValue: 1,
                       maxValue: 120,
                       initialValue: user.age.toDouble(),
@@ -220,13 +217,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Expanded(
                   child: _buildTextField(
                     context,
-                    label: 'H (cm)',
+                    label: tr('heightCm', lang),
                     controller: _heightController,
                     onChanged: (val) {
                       if (val.isNotEmpty) userViewModel.updateHeight(double.parse(val));
                     },
                     onPickerTap: () => _showPicker(
-                      title: 'Select Height',
+                      title: tr('selectHeight', lang),
                       minValue: 50,
                       maxValue: 250,
                       initialValue: user.height,
@@ -238,13 +235,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Expanded(
                   child: _buildTextField(
                     context,
-                    label: 'W (kg)',
+                    label: tr('weightKg', lang),
                     controller: _weightController,
                     onChanged: (val) {
                       if (val.isNotEmpty) userViewModel.updateWeight(double.parse(val));
                     },
                     onPickerTap: () => _showPicker(
-                      title: 'Select Weight',
+                      title: tr('selectWeight', lang),
                       minValue: 20,
                       maxValue: 300,
                       initialValue: user.weight,
@@ -255,10 +252,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ],
             ),
             const SizedBox(height: 32),
-            _buildSectionTitle(context, 'Goal & Activity'),
+            _buildSectionTitle(context, tr('goalActivity', lang)),
             _buildDropdown(
               context,
-              label: 'Activity Level',
+              label: tr('activityLevel', lang),
               value: user.activityLevel,
               items: AppConstants.activityLevels,
               onChanged: (val) => userViewModel.updateActivityLevel(val!),
@@ -266,13 +263,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 16),
             _buildDropdown(
               context,
-              label: 'Goal',
+              label: tr('goal', lang),
               value: user.goal,
               items: AppConstants.goals,
               onChanged: (val) => userViewModel.updateGoal(val!),
             ),
             const SizedBox(height: 32),
-            _buildSectionTitle(context, 'Restrictions (Allergies)'),
+            _buildSectionTitle(context, tr('restrictions', lang)),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -287,9 +284,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Expanded(
                         child: TextField(
                           controller: _allergyController,
-                          decoration: const InputDecoration(
-                            hintText: 'Add ingredient',
-                            hintStyle: TextStyle(color: Colors.grey),
+                          decoration: InputDecoration(
+                            hintText: tr('addIngredient', lang),
+                            hintStyle: const TextStyle(color: Colors.grey),
                             border: InputBorder.none,
                           ),
                           style: TextStyle(
@@ -310,7 +307,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   Divider(color: AppTheme.dividerColor),
                   user.allergies.isEmpty
                       ? Text(
-                          'No allergies specified.',
+                          tr('noAllergies', lang),
                           style: TextStyle(color: AppTheme.textSecondary),
                         )
                       : Wrap(
@@ -342,6 +339,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 32),
+            _buildSectionTitle(context, tr('language', lang)),
+            _buildLanguageSwitcher(context, lang),
           ],
         ),
       ),
@@ -417,6 +417,66 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
       keyboardType: TextInputType.number,
       onChanged: onChanged,
+    );
+  }
+
+  Widget _buildLanguageSwitcher(BuildContext context, String lang) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.language, color: Theme.of(context).primaryColor),
+          const SizedBox(width: 12),
+          Text(
+            tr('appLanguage', lang),
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+              fontSize: 16,
+            ),
+          ),
+          const Spacer(),
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildLangChip(context, 'ENG', lang),
+                _buildLangChip(context, 'RU', lang),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLangChip(BuildContext context, String label, String current) {
+    final isActive = current == label;
+    return GestureDetector(
+      onTap: () => ref.read(languageProvider.notifier).state = label,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? Theme.of(context).primaryColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? Colors.white : Theme.of(context).hintColor,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            fontSize: 13,
+          ),
+        ),
+      ),
     );
   }
 }
