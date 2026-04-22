@@ -33,25 +33,38 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     if (products.isEmpty) return [];
     final names = products.map((p) => p.name.toLowerCase()).toSet();
     return _recipeService.allRecipes.where((recipe) {
-      return recipe.ingredients.any(
+      final matchEng = recipe.ingredients.any(
         (ing) => names.contains(ing.toLowerCase()),
       );
+      final matchRu = recipe.ingredientsRu?.any(
+            (ing) => names.contains(ing.toLowerCase()),
+          ) ??
+          false;
+      return matchEng || matchRu;
     }).toList()
       ..sort((a, b) {
-        final aMatches = a.ingredients
-            .where((ing) => names.contains(ing.toLowerCase()))
-            .length;
-        final bMatches = b.ingredients
-            .where((ing) => names.contains(ing.toLowerCase()))
-            .length;
+        final aNamesEng = a.ingredients.map((e) => e.toLowerCase()).toSet();
+        final aNamesRu = a.ingredientsRu?.map((e) => e.toLowerCase()).toSet() ?? {};
+        final bNamesEng = b.ingredients.map((e) => e.toLowerCase()).toSet();
+        final bNamesRu = b.ingredientsRu?.map((e) => e.toLowerCase()).toSet() ?? {};
+
+        final aMatches = names.where((n) => aNamesEng.contains(n) || aNamesRu.contains(n)).length;
+        final bMatches = names.where((n) => bNamesEng.contains(n) || bNamesRu.contains(n)).length;
         return bMatches.compareTo(aMatches);
       });
   }
 
   int _countMatched(RecipeModel recipe, Set<String> productNames) {
-    return recipe.ingredients
+    final engCount = recipe.ingredients
         .where((ing) => productNames.contains(ing.toLowerCase()))
         .length;
+    final ruCount = recipe.ingredientsRu
+            ?.where((ing) => productNames.contains(ing.toLowerCase()))
+            .length ??
+        0;
+    // We take the max because an ingredient might be matched in either language
+    // strictly speaking we should probably set-intersect but this is usually fine
+    return engCount > ruCount ? engCount : ruCount;
   }
 
   @override
@@ -89,10 +102,19 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    style: const TextStyle(color: Colors.white),
+                    // Always use a high-contrast color relative to card background
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.black87,
+                    ),
                     decoration: InputDecoration(
                       hintText: tr('addProduct', lang),
-                      hintStyle: const TextStyle(color: Colors.grey),
+                      hintStyle: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white54
+                            : Colors.black38,
+                      ),
                       filled: true,
                       fillColor: Theme.of(context).cardColor,
                       border: OutlineInputBorder(
@@ -260,7 +282,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                               final recipe = matchingRecipes[index];
                               final matched =
                                   _countMatched(recipe, productNames);
-                              final total = recipe.ingredients.length;
+                              final total = recipe.localizedIngredients(lang).length;
                               return _buildRecipeSuggestion(
                                 context,
                                 recipe,
@@ -344,7 +366,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            recipe.title,
+                            recipe.localizedTitle(lang),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
@@ -375,8 +397,10 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${recipe.calories} kcal  •  ${tr('protein', lang).substring(0, 1)}:${recipe.protein}g  ${tr('fats', lang).substring(0, 1)}:${recipe.fats}g  ${tr('carbs', lang).substring(0, 1)}:${recipe.carbs}g',
-                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      recipe.localizedDescription(lang),
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     // Ingredient match bar

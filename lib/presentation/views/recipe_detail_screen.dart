@@ -50,7 +50,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
             Expanded(
               child: Text(
                 tr('addedToDiary', lang)
-                    .replaceAll('{name}', widget.recipe.title),
+                    .replaceAll('{name}', widget.recipe.localizedTitle(lang)),
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
@@ -72,7 +72,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(recipe.title),
+        title: Text(recipe.localizedTitle(lang)),
         backgroundColor: isAllergic
             ? Colors.red[900]
             : Theme.of(context).scaffoldBackgroundColor,
@@ -151,14 +151,14 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    recipe.title,
+                    recipe.localizedTitle(lang),
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       color: Theme.of(context).primaryColor,
                     ),
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    recipe.description,
+                    recipe.localizedDescription(lang),
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 30),
@@ -183,7 +183,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                       _buildSectionTitle(context, tr('ingredients', lang)),
                       const Spacer(),
                       Text(
-                        '${_checkedIngredients.length}/${recipe.ingredients.length} ${tr('have', lang)}',
+                        '${_checkedIngredients.length}/${recipe.localizedIngredients(lang).length} ${tr('have', lang)}',
                         style: TextStyle(
                           color: Theme.of(context).primaryColor,
                           fontSize: 13,
@@ -201,7 +201,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                     child: ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: recipe.ingredients.length,
+                      itemCount: recipe.localizedIngredients(lang).length,
                       separatorBuilder: (_, __) => Divider(
                         height: 1,
                         color: Theme.of(context).dividerColor.withOpacity(0.3),
@@ -245,7 +245,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
-                                    recipe.ingredients[index],
+                                    recipe.localizedIngredients(lang)[index],
                                     style: TextStyle(
                                       fontSize: 15,
                                       color: isChecked
@@ -290,7 +290,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: recipe.steps.length,
+                    itemCount: recipe.localizedSteps(lang).length,
                     separatorBuilder: (context, index) => const Divider(),
                     itemBuilder: (context, index) {
                       return ListTile(
@@ -300,7 +300,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen> {
                           child: Text('${index + 1}'),
                         ),
                         title: Text(
-                          recipe.steps[index],
+                          recipe.localizedSteps(lang)[index],
                           style: Theme.of(context).textTheme.bodyLarge,
                         ),
                       );

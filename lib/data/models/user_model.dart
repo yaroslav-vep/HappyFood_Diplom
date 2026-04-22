@@ -11,6 +11,7 @@ class UserModel {
   bool isOnboardingCompleted; // Track onboarding completion
   double? bmi; // Calculated BMI
   double? dailyCalorieNeeds; // Estimated daily calories
+  String? avatarPath; // Local path to avatar image
 
   UserModel({
     this.gender = 'Male',
@@ -25,6 +26,7 @@ class UserModel {
     this.isOnboardingCompleted = false,
     this.bmi,
     this.dailyCalorieNeeds,
+    this.avatarPath,
   }) {
     // Auto-calculate on creation if data available
     if (weight > 0 && height > 0) {
@@ -108,6 +110,8 @@ class UserModel {
     bool? isOnboardingCompleted,
     double? bmi,
     double? dailyCalorieNeeds,
+    String? avatarPath,
+    bool clearAvatar = false,
   }) {
     return UserModel(
       gender: gender ?? this.gender,
@@ -123,6 +127,7 @@ class UserModel {
           isOnboardingCompleted ?? this.isOnboardingCompleted,
       bmi: bmi ?? this.bmi,
       dailyCalorieNeeds: dailyCalorieNeeds ?? this.dailyCalorieNeeds,
+      avatarPath: clearAvatar ? null : (avatarPath ?? this.avatarPath),
     );
   }
 
@@ -140,6 +145,7 @@ class UserModel {
       'isOnboardingCompleted': isOnboardingCompleted,
       'bmi': bmi,
       'dailyCalorieNeeds': dailyCalorieNeeds,
+      'avatarPath': avatarPath,
     };
   }
 
@@ -163,6 +169,7 @@ class UserModel {
       dailyCalorieNeeds: (json['dailyCalorieNeeds'] ?? 0.0).toDouble() == 0.0
           ? null
           : (json['dailyCalorieNeeds'] ?? 0.0).toDouble(),
+      avatarPath: json['avatarPath'] as String?,
     );
   }
 }

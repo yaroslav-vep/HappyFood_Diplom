@@ -88,6 +88,15 @@ class UserViewModel extends StateNotifier<UserModel> {
     state = state.copyWith(excludedProducts: products);
     _saveUser(state);
   }
+
+  void updateAvatarPath(String? path) {
+    if (path == null) {
+      state = state.copyWith(clearAvatar: true);
+    } else {
+      state = state.copyWith(avatarPath: path);
+    }
+    _saveUser(state);
+  }
 }
 
 final userViewModelProvider = StateNotifierProvider<UserViewModel, UserModel>((

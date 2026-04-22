@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constant/app_theme.dart';
 import '../viewmodels/onboarding_viewmodel.dart';
@@ -18,9 +19,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   late Animation<Offset> _slideAnimation;
 
   final TextEditingController _allergyController = TextEditingController();
-  final TextEditingController _ageController = TextEditingController();
-  final TextEditingController _weightController = TextEditingController();
-  final TextEditingController _heightController = TextEditingController();
 
   @override
   void initState() {
@@ -40,28 +38,128 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           ),
         );
     _animationController.forward();
+  }
 
-    // Initialize controllers with default values from provider
-    // We use a post-frame callback to access ref safely if needed,
-    // but here we just want defaults. state might not be ready in initState for reading via ref.read??
-    // Actually in ConsumerState, ref is available.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final state = ref.read(onboardingViewModelProvider);
-      _ageController.text = state.age.toString();
-      _weightController.text = state.weight
-          .toInt()
-          .toString(); // Display as int for cleanliness
-      _heightController.text = state.height.toInt().toString();
-    });
+  void _showDrumPicker({
+    required BuildContext context,
+    required String title,
+    required int minValue,
+    required int maxValue,
+    required double currentValue,
+    required String unit,
+    required Function(double) onSelected,
+  }) {
+    int selectedIndex =
+        (currentValue.toInt() - minValue).clamp(0, maxValue - minValue);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surfaceColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SizedBox(
+          height: 320,
+          child: Column(
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(color: AppTheme.textSecondary),
+                      ),
+                    ),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        onSelected(selectedIndex.toDouble() + minValue);
+                        Navigator.pop(ctx);
+                      },
+                      child: Text(
+                        'Confirm',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      height: 44,
+                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppTheme.primaryColor.withOpacity(0.25),
+                        ),
+                      ),
+                    ),
+                    CupertinoPicker(
+                      itemExtent: 44,
+                      scrollController: FixedExtentScrollController(
+                        initialItem: selectedIndex,
+                      ),
+                      onSelectedItemChanged: (idx) => selectedIndex = idx,
+                      selectionOverlay:
+                          const CupertinoPickerDefaultSelectionOverlay(
+                        background: Colors.transparent,
+                      ),
+                      children: List.generate(
+                        maxValue - minValue + 1,
+                        (idx) => Center(
+                          child: Text(
+                            '${idx + minValue} $unit',
+                            style: TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
   void dispose() {
     _animationController.dispose();
     _allergyController.dispose();
-    _ageController.dispose();
-    _weightController.dispose();
-    _heightController.dispose();
     super.dispose();
   }
 
@@ -216,48 +314,60 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           ),
           const SizedBox(height: 32),
 
-          // Age Input
+          // Age drum picker
           _buildLabel('Age'),
           const SizedBox(height: 12),
-          _buildNumberInput(
-            controller: _ageController,
-            suffix: 'years',
-            onChanged: (val) {
-              if (val.isNotEmpty) {
-                final parsed = int.tryParse(val);
-                if (parsed != null) viewModel.updateAge(parsed);
-              }
-            },
+          _buildDrumPickerTile(
+            label: 'Age',
+            value: '${state.age}',
+            unit: 'years',
+            onTap: () => _showDrumPicker(
+              context: context,
+              title: 'Select Age',
+              minValue: 1,
+              maxValue: 120,
+              currentValue: state.age.toDouble(),
+              unit: 'years',
+              onSelected: (v) => viewModel.updateAge(v.toInt()),
+            ),
           ),
           const SizedBox(height: 32),
 
-          // Weight Input
+          // Weight drum picker
           _buildLabel('Weight'),
           const SizedBox(height: 12),
-          _buildNumberInput(
-            controller: _weightController,
-            suffix: 'kg',
-            onChanged: (val) {
-              if (val.isNotEmpty) {
-                final parsed = double.tryParse(val);
-                if (parsed != null) viewModel.updateWeight(parsed);
-              }
-            },
+          _buildDrumPickerTile(
+            label: 'Weight',
+            value: '${state.weight.toInt()}',
+            unit: 'kg',
+            onTap: () => _showDrumPicker(
+              context: context,
+              title: 'Select Weight',
+              minValue: 20,
+              maxValue: 300,
+              currentValue: state.weight,
+              unit: 'kg',
+              onSelected: (v) => viewModel.updateWeight(v),
+            ),
           ),
           const SizedBox(height: 32),
 
-          // Height Input
+          // Height drum picker
           _buildLabel('Height'),
           const SizedBox(height: 12),
-          _buildNumberInput(
-            controller: _heightController,
-            suffix: 'cm',
-            onChanged: (val) {
-              if (val.isNotEmpty) {
-                final parsed = double.tryParse(val);
-                if (parsed != null) viewModel.updateHeight(parsed);
-              }
-            },
+          _buildDrumPickerTile(
+            label: 'Height',
+            value: '${state.height.toInt()}',
+            unit: 'cm',
+            onTap: () => _showDrumPicker(
+              context: context,
+              title: 'Select Height',
+              minValue: 50,
+              maxValue: 250,
+              currentValue: state.height,
+              unit: 'cm',
+              onSelected: (v) => viewModel.updateHeight(v),
+            ),
           ),
           const SizedBox(height: 40),
         ],
@@ -655,49 +765,57 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     );
   }
 
-  Widget _buildNumberInput({
-    required TextEditingController controller,
-    required String suffix,
-    required ValueChanged<String> onChanged,
+  Widget _buildDrumPickerTile({
+    required String label,
+    required String value,
+    required String unit,
+    required VoidCallback onTap,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: TextInputType.number,
-        onChanged: onChanged,
-        style: TextStyle(
-          color: AppTheme.textPrimary,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryColor.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        decoration: InputDecoration(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: AppTheme.surfaceColor,
-          suffixText: suffix,
-          suffixStyle: TextStyle(
-            color: AppTheme.textSecondary,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 16,
-          ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    unit,
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.expand_more_rounded,
+              color: AppTheme.primaryColor,
+              size: 26,
+            ),
+          ],
         ),
       ),
     );

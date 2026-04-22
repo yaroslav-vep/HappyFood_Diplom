@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constant/app_theme.dart';
 import '../viewmodels/user_viewmodel.dart';
@@ -16,60 +18,103 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final TextEditingController _allergyController = TextEditingController();
-  final TextEditingController _ageController = TextEditingController();
-  final TextEditingController _heightController = TextEditingController();
-  final TextEditingController _weightController = TextEditingController();
+  final ImagePicker _imagePicker = ImagePicker();
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final user = ref.read(userViewModelProvider);
-      _ageController.text = user.age.toString();
-      _heightController.text = user.height.toString();
-      _weightController.text = user.weight.toString();
-    });
-  }
+  // Common allergen presets
+  static const _commonAllergens = [
+    'Dairy', 'Gluten', 'Nuts', 'Eggs', 'Shellfish', 'Soy', 'Fish', 'Wheat',
+  ];
 
   @override
   void dispose() {
     _allergyController.dispose();
-    _ageController.dispose();
-    _heightController.dispose();
-    _weightController.dispose();
     super.dispose();
   }
 
-  void _addAllergy() {
-    if (_allergyController.text.isNotEmpty) {
-      final user = ref.read(userViewModelProvider);
-      final currentAllergies = List<String>.from(user.allergies);
-      if (!currentAllergies.contains(_allergyController.text.trim())) {
-        currentAllergies.add(_allergyController.text.trim());
-        ref
-            .read(userViewModelProvider.notifier)
-            .updateAllergies(currentAllergies);
+  // ── Avatar ─────────────────────────────────────────────────────────────────
+
+  Future<void> _pickAvatar() async {
+    final lang = ref.read(languageProvider);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[400],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: Icon(Icons.photo_library, color: Theme.of(ctx).primaryColor),
+              title: Text(lang == 'RU' ? 'Из галереи' : 'From Gallery'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                await _pickImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.photo_camera, color: Theme.of(ctx).primaryColor),
+              title: Text(lang == 'RU' ? 'Сделать фото' : 'Take Photo'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                await _pickImage(ImageSource.camera);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? picked = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
+      if (picked != null) {
+        ref.read(userViewModelProvider.notifier).updateAvatarPath(picked.path);
       }
-      _allergyController.clear();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(ref.read(languageProvider) == 'RU'
+                ? 'Ошибка при выборе фото'
+                : 'Error picking photo'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
-  void _removeAllergy(String allergy) {
-    final user = ref.read(userViewModelProvider);
-    final currentAllergies = List<String>.from(user.allergies);
-    currentAllergies.remove(allergy);
-    ref.read(userViewModelProvider.notifier).updateAllergies(currentAllergies);
-  }
+  // ── Drum Picker ────────────────────────────────────────────────────────────
 
-  void _showPicker({
+  void _showDrumPicker({
     required String title,
     required int minValue,
     required int maxValue,
-    required double initialValue,
+    required double currentValue,
+    required String unit,
     required Function(double) onSelected,
   }) {
     final lang = ref.read(languageProvider);
-    int selectedIndex = (initialValue - minValue).toInt();
+    int selectedIndex = (currentValue.toInt() - minValue).clamp(0, maxValue - minValue);
 
     showModalBottomSheet(
       context: context,
@@ -79,52 +124,128 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
       builder: (context) {
         return SizedBox(
-          height: 300,
+          height: 320,
           child: Column(
             children: [
+              // Handle bar
+              const SizedBox(height: 8),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: Text(tr('cancel', lang), style: TextStyle(color: AppTheme.textSecondary)),
+                      child: Text(
+                        tr('cancel', lang),
+                        style: TextStyle(color: AppTheme.textSecondary),
+                      ),
                     ),
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
                     TextButton(
                       onPressed: () {
                         onSelected(selectedIndex.toDouble() + minValue);
                         Navigator.pop(context);
                       },
-                      child: Text(tr('confirm', lang), style: const TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(
+                        tr('confirm', lang),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
+              // Drum picker
               Expanded(
-                child: CupertinoPicker(
-                  itemExtent: 40,
-                  scrollController: FixedExtentScrollController(initialItem: selectedIndex),
-                  onSelectedItemChanged: (index) {
-                    selectedIndex = index;
-                  },
-                  children: List.generate(maxValue - minValue + 1, (index) {
-                    return Center(
-                      child: Text(
-                        '${index + minValue}',
-                        style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Selection highlight band
+                    Container(
+                      height: 44,
+                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppTheme.primaryColor.withOpacity(0.25),
+                        ),
                       ),
-                    );
-                  }),
+                    ),
+                    CupertinoPicker(
+                      itemExtent: 44,
+                      scrollController: FixedExtentScrollController(
+                        initialItem: selectedIndex,
+                      ),
+                      onSelectedItemChanged: (idx) => selectedIndex = idx,
+                      selectionOverlay: const CupertinoPickerDefaultSelectionOverlay(
+                        background: Colors.transparent,
+                      ),
+                      children: List.generate(
+                        maxValue - minValue + 1,
+                        (idx) => Center(
+                          child: Text(
+                            '${idx + minValue} $unit',
+                            style: TextStyle(
+                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(height: 12),
             ],
           ),
         );
       },
     );
   }
+
+  // ── Allergen helpers ────────────────────────────────────────────────────────
+
+  void _addAllergy(String allergy) {
+    final trimmed = allergy.trim();
+    if (trimmed.isEmpty) return;
+    final user = ref.read(userViewModelProvider);
+    final current = List<String>.from(user.allergies);
+    if (!current.any((a) => a.toLowerCase() == trimmed.toLowerCase())) {
+      current.add(trimmed);
+      ref.read(userViewModelProvider.notifier).updateAllergies(current);
+    }
+    _allergyController.clear();
+  }
+
+  void _removeAllergy(String allergy) {
+    final user = ref.read(userViewModelProvider);
+    final current = List<String>.from(user.allergies)
+      ..removeWhere((a) => a.toLowerCase() == allergy.toLowerCase());
+    ref.read(userViewModelProvider.notifier).updateAllergies(current);
+  }
+
+  // ── Build ───────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -133,11 +254,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final theme = Theme.of(context);
     final lang = ref.watch(languageProvider);
 
-    // Sync controllers if model changes from elsewhere
-    _ageController.text = user.age.toString();
-    _heightController.text = user.height.toString();
-    _weightController.text = user.weight.toString();
-
     return Scaffold(
       appBar: AppBar(
         title: Text(tr('profile', lang)),
@@ -145,12 +261,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
           ),
         ],
       ),
@@ -159,32 +273,68 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Avatar ──────────────────────────────────────────────────────
             Center(
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: AppTheme.primaryColorLight,
-                    backgroundImage: const NetworkImage(
-                      'https://i.pravatar.cc/300',
-                    ),
-                    child: Icon(
-                      Icons.person,
-                      size: 50,
-                      color: AppTheme.primaryColor,
+                  GestureDetector(
+                    onTap: _pickAvatar,
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 54,
+                          backgroundColor: AppTheme.primaryColorLight,
+                          backgroundImage: user.avatarPath != null
+                              ? FileImage(File(user.avatarPath!))
+                              : null,
+                          child: user.avatarPath == null
+                              ? Icon(
+                                  Icons.person,
+                                  size: 54,
+                                  color: AppTheme.primaryColor,
+                                )
+                              : null,
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(7),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: theme.scaffoldBackgroundColor,
+                                width: 2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    tr('updatePhoto', lang),
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: Theme.of(context).primaryColor,
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: _pickAvatar,
+                    child: Text(
+                      tr('updatePhoto', lang),
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.primaryColor,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
+
             const SizedBox(height: 32),
+
+            // ── Personal Details ─────────────────────────────────────────────
             _buildSectionTitle(context, tr('personalDetails', lang)),
             _buildDropdown(
               context,
@@ -194,64 +344,66 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               onChanged: (val) => userViewModel.updateGender(val!),
             ),
             const SizedBox(height: 16),
+
+            // Age / Height / Weight — tap-to-open drum pickers
             Row(
               children: [
                 Expanded(
-                  child: _buildTextField(
+                  child: _buildDrumPickerTile(
                     context,
                     label: tr('age', lang),
-                    controller: _ageController,
-                    onChanged: (val) {
-                      if (val.isNotEmpty) userViewModel.updateAge(int.parse(val));
-                    },
-                    onPickerTap: () => _showPicker(
+                    value: '${user.age}',
+                    unit: lang == 'RU' ? 'лет' : 'yr',
+                    onTap: () => _showDrumPicker(
                       title: tr('selectAge', lang),
                       minValue: 1,
                       maxValue: 120,
-                      initialValue: user.age.toDouble(),
-                      onSelected: (val) => userViewModel.updateAge(val.toInt()),
+                      currentValue: user.age.toDouble(),
+                      unit: lang == 'RU' ? 'лет' : 'yr',
+                      onSelected: (v) => userViewModel.updateAge(v.toInt()),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildTextField(
+                  child: _buildDrumPickerTile(
                     context,
                     label: tr('heightCm', lang),
-                    controller: _heightController,
-                    onChanged: (val) {
-                      if (val.isNotEmpty) userViewModel.updateHeight(double.parse(val));
-                    },
-                    onPickerTap: () => _showPicker(
+                    value: '${user.height.toInt()}',
+                    unit: 'cm',
+                    onTap: () => _showDrumPicker(
                       title: tr('selectHeight', lang),
                       minValue: 50,
                       maxValue: 250,
-                      initialValue: user.height,
-                      onSelected: (val) => userViewModel.updateHeight(val),
+                      currentValue: user.height,
+                      unit: 'cm',
+                      onSelected: (v) => userViewModel.updateHeight(v),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildTextField(
+                  child: _buildDrumPickerTile(
                     context,
                     label: tr('weightKg', lang),
-                    controller: _weightController,
-                    onChanged: (val) {
-                      if (val.isNotEmpty) userViewModel.updateWeight(double.parse(val));
-                    },
-                    onPickerTap: () => _showPicker(
+                    value: '${user.weight.toInt()}',
+                    unit: 'kg',
+                    onTap: () => _showDrumPicker(
                       title: tr('selectWeight', lang),
                       minValue: 20,
                       maxValue: 300,
-                      initialValue: user.weight,
-                      onSelected: (val) => userViewModel.updateWeight(val),
+                      currentValue: user.weight,
+                      unit: 'kg',
+                      onSelected: (v) => userViewModel.updateWeight(v),
                     ),
                   ),
                 ),
               ],
             ),
+
             const SizedBox(height: 32),
+
+            // ── Goal & Activity ──────────────────────────────────────────────
             _buildSectionTitle(context, tr('goalActivity', lang)),
             _buildDropdown(
               context,
@@ -268,78 +420,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               items: AppConstants.goals,
               onChanged: (val) => userViewModel.updateGoal(val!),
             ),
+
             const SizedBox(height: 32),
+
+            // ── Restrictions / Allergens ─────────────────────────────────────
             _buildSectionTitle(context, tr('restrictions', lang)),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _allergyController,
-                          decoration: InputDecoration(
-                            hintText: tr('addIngredient', lang),
-                            hintStyle: const TextStyle(color: Colors.grey),
-                            border: InputBorder.none,
-                          ),
-                          style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                          ),
-                          onSubmitted: (_) => _addAllergy(),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.add_circle,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        onPressed: _addAllergy,
-                      ),
-                    ],
-                  ),
-                  Divider(color: AppTheme.dividerColor),
-                  user.allergies.isEmpty
-                      ? Text(
-                          tr('noAllergies', lang),
-                          style: TextStyle(color: AppTheme.textSecondary),
-                        )
-                      : Wrap(
-                          spacing: 8,
-                          runSpacing: 4,
-                          children: user.allergies
-                              .map(
-                                (allergy) => Chip(
-                                  label: Text(allergy),
-                                  backgroundColor: const Color(0xFFFFF5F3),
-                                  side: BorderSide(
-                                    color: AppTheme.errorColor,
-                                    width: 1,
-                                  ),
-                                  labelStyle: TextStyle(
-                                    color: AppTheme.errorColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  deleteIcon: Icon(
-                                    Icons.close,
-                                    size: 14,
-                                    color: AppTheme.errorColor,
-                                  ),
-                                  onDeleted: () => _removeAllergy(allergy),
-                                ),
-                              )
-                              .toList(),
-                        ),
-                ],
-              ),
-            ),
+            _buildAllergenSection(context, user.allergies, lang),
+
             const SizedBox(height: 32),
+
+            // ── Language ─────────────────────────────────────────────────────
             _buildSectionTitle(context, tr('language', lang)),
             _buildLanguageSwitcher(context, lang),
           ],
@@ -347,6 +437,223 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     );
   }
+
+  // ── Allergen section ────────────────────────────────────────────────────────
+
+  Widget _buildAllergenSection(
+    BuildContext context,
+    List<String> userAllergies,
+    String lang,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Preset common allergen chips
+          Text(
+            lang == 'RU' ? 'Быстрый выбор:' : 'Quick select:',
+            style: TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _commonAllergens.map((allergen) {
+              final isSelected = userAllergies
+                  .any((a) => a.toLowerCase() == allergen.toLowerCase());
+              return GestureDetector(
+                onTap: () => isSelected
+                    ? _removeAllergy(allergen)
+                    : _addAllergy(allergen),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppTheme.errorColor.withOpacity(0.12)
+                        : Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppTheme.errorColor
+                          : AppTheme.dividerColor,
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isSelected) ...[
+                        Icon(
+                          Icons.check,
+                          size: 13,
+                          color: AppTheme.errorColor,
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      Text(
+                        allergen,
+                        style: TextStyle(
+                          color: isSelected
+                              ? AppTheme.errorColor
+                              : Theme.of(context).textTheme.bodyLarge?.color,
+                          fontSize: 13,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+          Divider(color: AppTheme.dividerColor),
+          const SizedBox(height: 8),
+
+          // Custom allergen input
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _allergyController,
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: tr('addIngredient', lang),
+                    hintStyle: TextStyle(color: AppTheme.textSecondary),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onSubmitted: _addAllergy,
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.add_circle,
+                  color: AppTheme.primaryColor,
+                ),
+                onPressed: () => _addAllergy(_allergyController.text),
+                tooltip: lang == 'RU' ? 'Добавить' : 'Add',
+              ),
+            ],
+          ),
+
+          // Selected (non-preset or all active) allergens as deletable chips
+          if (userAllergies.isNotEmpty) ...[
+            Divider(color: AppTheme.dividerColor),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: userAllergies.map((allergy) {
+                return Chip(
+                  label: Text(allergy),
+                  backgroundColor: const Color(0xFFFFF5F3),
+                  side: BorderSide(color: AppTheme.errorColor, width: 1),
+                  labelStyle: TextStyle(
+                    color: AppTheme.errorColor,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                  deleteIcon: Icon(
+                    Icons.close,
+                    size: 14,
+                    color: AppTheme.errorColor,
+                  ),
+                  onDeleted: () => _removeAllergy(allergy),
+                );
+              }).toList(),
+            ),
+          ] else ...[
+            const SizedBox(height: 4),
+            Text(
+              tr('noAllergies', lang),
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ── Drum Picker Tile ────────────────────────────────────────────────────────
+
+  Widget _buildDrumPickerTile(
+    BuildContext context, {
+    required String label,
+    required String value,
+    required String unit,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.expand_more_rounded,
+                  color: AppTheme.primaryColor,
+                  size: 20,
+                ),
+              ],
+            ),
+            Text(
+              unit,
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
 
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Padding(
@@ -368,8 +675,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     required List<String> items,
     required Function(String?) onChanged,
   }) {
-    final safeValue = items.contains(value) ? value : (items.isNotEmpty ? items.first : null);
-
+    final safeValue =
+        items.contains(value) ? value : (items.isNotEmpty ? items.first : null);
     return DropdownButtonFormField<String>(
       decoration: InputDecoration(
         labelText: label,
@@ -383,39 +690,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
       dropdownColor: Theme.of(context).cardColor,
       value: safeValue,
-      items: items.map((item) {
-        return DropdownMenuItem(value: item, child: Text(item));
-      }).toList(),
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _buildTextField(
-    BuildContext context, {
-    required String label,
-    required TextEditingController controller,
-    required Function(String) onChanged,
-    required VoidCallback onPickerTap,
-  }) {
-    return TextFormField(
-      controller: controller,
-      style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
-        filled: true,
-        fillColor: Theme.of(context).cardColor,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        suffixIcon: IconButton(
-          icon: Icon(Icons.unfold_more, color: Theme.of(context).primaryColor, size: 20),
-          onPressed: onPickerTap,
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-      ),
-      keyboardType: TextInputType.number,
+      items: items
+          .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+          .toList(),
       onChanged: onChanged,
     );
   }
