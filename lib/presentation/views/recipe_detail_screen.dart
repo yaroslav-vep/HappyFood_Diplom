@@ -34,7 +34,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
 
   // AI proxy URL
   static const _aiUrl =
-      'https://ai-proxy-server-production-fb99.up.railway.app/chat';
+      'https://ai-proxy-server-production-5ebf.up.railway.app/chat';
 
   @override
   void initState() {

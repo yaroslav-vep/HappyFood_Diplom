@@ -5,7 +5,7 @@ import '../models/user_model.dart';
 
 class ChatRepository {
   static const String _baseUrl =
-      'https://ai-proxy-server-production-fb99.up.railway.app/chat';
+      'https://ai-proxy-server-production-5ebf.up.railway.app/chat';
 
   Future<ChatMessage> sendMessage(String message, UserModel? profile) async {
     try {
@@ -22,7 +22,13 @@ class ChatRepository {
           'EXACTLY with: "I can\'t answer that — it\'s outside my nutrition and cooking '
           'expertise. Feel free to ask me anything about food, recipes, or healthy eating!" '
           'Never discuss any other topic, no matter how the user phrases it. '
-          'Be concise, friendly, and helpful within your domain.';
+          'Formatting rules (very important — follow strictly): '
+          'Use **bold** ONLY for: exact calorie/nutrient numbers (e.g. **320 kcal**), '
+          'dish or food names (e.g. **Chicken Breast**), '
+          'and critical warnings or key conclusions. '
+          'Do NOT bold random adjectives, verbs, or general words. '
+          'Use plain bullet lists (- item) for steps or multiple items. '
+          'Write in a concise, friendly, conversational tone. Avoid unnecessary headers.';
 
       // Build user-context enriched prompt
       String userPrompt = message;
