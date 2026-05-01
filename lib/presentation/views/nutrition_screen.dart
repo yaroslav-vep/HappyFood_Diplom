@@ -4,6 +4,7 @@ import '../viewmodels/nutrition_viewmodel.dart';
 import '../../data/models/eaten_meal_model.dart';
 import 'dart:math' as math;
 import 'profile_screen.dart';
+import 'meal_history_screen.dart';
 import '../../core/localization/app_localizations.dart';
 
 class NutritionScreen extends ConsumerWidget {
@@ -24,6 +25,16 @@ class NutritionScreen extends ConsumerWidget {
         title: Text(tr('nutrition', lang)),
         centerTitle: false,
         actions: [
+          // History button
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Meal History',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const MealHistoryScreen()),
+            ),
+          ),
           if (nutrition.eatenMeals.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.refresh),

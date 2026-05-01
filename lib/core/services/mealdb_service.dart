@@ -157,11 +157,42 @@ class MealDbService {
                 .where((s) => s.trim().isNotEmpty)
                 .take(6)
                 .toList(),
+        optionalIngredientIndices: _detectOptionalIngredients(ingredients),
       );
     } catch (_) {
       return null;
     }
   }
+
+  /// Determine which ingredients are optional based on their names.
+  /// Spices, garnishes, sauces = optional. Proteins and main starches = required.
+  List<int> _detectOptionalIngredients(List<String> ingredients) {
+    // Keywords that make an ingredient "optional"
+    const optionalKeywords = [
+      'salt', 'pepper', 'garnish', 'parsley', 'coriander', 'cilantro',
+      'basil', 'mint', 'dill', 'chive', 'scallion', 'spring onion',
+      'sauce', 'ketchup', 'mustard', 'mayo', 'mayonnaise',
+      'sugar', 'honey', 'syrup', 'vanilla', 'cinnamon', 'nutmeg', 'cumin',
+      'paprika', 'turmeric', 'chilli', 'chili', 'cayenne', 'oregano', 'thyme',
+      'bay leaf', 'rosemary', 'bay', 'garam masala', 'allspice',
+      'lemon juice', 'lime juice', 'vinegar', 'oil', 'olive oil',
+      'butter', 'cream', 'sour cream', 'cheese', 'topping',
+      'sesame', 'sesame seed', 'poppy seed',
+      'optional', 'to taste', 'for serving', 'to serve', 'to garnish',
+      'breadcrumbs', 'croutons', 'crackers',
+      'zest', 'juice',
+    ];
+
+    final optional = <int>[];
+    for (int i = 0; i < ingredients.length; i++) {
+      final lower = ingredients[i].toLowerCase();
+      if (optionalKeywords.any((kw) => lower.contains(kw))) {
+        optional.add(i);
+      }
+    }
+    return optional;
+  }
+
 
   /// Parse instructions text into individual steps.
   List<String> _parseSteps(String instructions) {

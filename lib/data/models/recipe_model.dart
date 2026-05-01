@@ -14,6 +14,10 @@ class RecipeModel {
   final List<String> steps;
   final List<String>? stepsRu;
 
+  /// Indices of ingredients that are OPTIONAL (can be skipped).
+  /// Required ingredients = all indices NOT in this list.
+  final List<int> optionalIngredientIndices;
+
   RecipeModel({
     required this.title,
     this.titleRu,
@@ -29,10 +33,17 @@ class RecipeModel {
     required this.imageUrl,
     required this.steps,
     this.stepsRu,
+    this.optionalIngredientIndices = const [],
   });
 
-  String localizedTitle(String lang) => (lang == 'RU' && titleRu != null) ? titleRu! : title;
-  String localizedDescription(String lang) => (lang == 'RU' && descriptionRu != null) ? descriptionRu! : description;
-  List<String> localizedIngredients(String lang) => (lang == 'RU' && ingredientsRu != null) ? ingredientsRu! : ingredients;
-  List<String> localizedSteps(String lang) => (lang == 'RU' && stepsRu != null) ? stepsRu! : steps;
+  String localizedTitle(String lang) => title;
+  String localizedDescription(String lang) => description;
+  List<String> localizedIngredients(String lang) => ingredients;
+  List<String> localizedSteps(String lang) => steps;
+
+  /// Returns true if the given ingredient index is optional.
+  bool isOptional(int index) => optionalIngredientIndices.contains(index);
+
+  /// Returns true if the given ingredient index is required.
+  bool isRequired(int index) => !optionalIngredientIndices.contains(index);
 }

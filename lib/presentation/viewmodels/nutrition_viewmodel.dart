@@ -112,15 +112,27 @@ class NutritionViewModel extends StateNotifier<NutritionModel> {
     );
   }
 
-  // Reset today's intake
+  // Reset today's intake (saves to history first)
   void clearToday() {
+    final todayMeals = state.eatenMeals;
+    // Only save to history if there were actual meals today
+    final updatedHistory = todayMeals.isNotEmpty
+        ? [todayMeals, ...state.mealHistory]
+        : state.mealHistory;
+
     state = state.copyWith(
       calories: 0,
       protein: 0,
       fats: 0,
       carbs: 0,
       eatenMeals: [],
+      mealHistory: updatedHistory,
     );
+  }
+
+  // Clear all history
+  void clearHistory() {
+    state = state.copyWith(mealHistory: []);
   }
 }
 

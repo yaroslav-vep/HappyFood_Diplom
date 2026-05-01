@@ -15,6 +15,10 @@ class NutritionModel {
   // List of eaten meals today
   final List<EatenMealModel> eatenMeals;
 
+  /// Historical meal log: list of past-day meal lists (newest first).
+  /// Each inner list = all meals eaten on that particular day.
+  final List<List<EatenMealModel>> mealHistory;
+
   NutritionModel({
     required this.calories,
     required this.protein,
@@ -25,6 +29,7 @@ class NutritionModel {
     this.targetFats = 67,
     this.targetCarbs = 200,
     this.eatenMeals = const [],
+    this.mealHistory = const [],
   });
 
   NutritionModel copyWith({
@@ -37,6 +42,7 @@ class NutritionModel {
     int? targetFats,
     int? targetCarbs,
     List<EatenMealModel>? eatenMeals,
+    List<List<EatenMealModel>>? mealHistory,
   }) {
     return NutritionModel(
       calories: calories ?? this.calories,
@@ -48,6 +54,7 @@ class NutritionModel {
       targetFats: targetFats ?? this.targetFats,
       targetCarbs: targetCarbs ?? this.targetCarbs,
       eatenMeals: eatenMeals ?? this.eatenMeals,
+      mealHistory: mealHistory ?? this.mealHistory,
     );
   }
 }

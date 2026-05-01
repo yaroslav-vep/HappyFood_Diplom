@@ -34,23 +34,24 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
     'wheat': ['wheat', 'flour', 'пшеница', 'мука'],
   };
 
-  /// Returns true if any of the recipe's ingredients match the user's allergens.
-  /// Uses both exact match and keyword-expansion matching for preset allergens.
+  /// Returns true ONLY if the recipe contains a REQUIRED ingredient matching the user's allergen.
+  /// If the allergenic ingredient is optional (can be removed), returns false.
   bool _checkAllergies(RecipeModel recipe, List<String> userAllergies) {
     if (userAllergies.isEmpty) return false;
-    final allIngredients = [
-      ...recipe.ingredients,
-      ...?recipe.ingredientsRu,
-    ].map((i) => i.toLowerCase()).toList();
 
-    for (final allergy in userAllergies) {
-      final lowerAllergy = allergy.toLowerCase();
-      // Check direct match (ingredient contains allergen word)
-      if (allIngredients.any((ing) => ing.contains(lowerAllergy))) return true;
-      // Check keyword expansion
-      final keywords = _allergenKeywords[lowerAllergy];
-      if (keywords != null) {
-        if (allIngredients.any((ing) => keywords.any((kw) => ing.contains(kw)))) {
+    for (int i = 0; i < recipe.ingredients.length; i++) {
+      // Only flag REQUIRED ingredients — optional ones can be skipped safely
+      if (recipe.isOptional(i)) continue;
+
+      final ing = recipe.ingredients[i].toLowerCase();
+
+      for (final allergy in userAllergies) {
+        final lowerAllergy = allergy.toLowerCase();
+        // Direct match
+        if (ing.contains(lowerAllergy)) return true;
+        // Keyword expansion
+        final keywords = _allergenKeywords[lowerAllergy];
+        if (keywords != null && keywords.any((kw) => ing.contains(kw))) {
           return true;
         }
       }
@@ -161,7 +162,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
           else
             IconButton(
               icon: const Icon(Icons.refresh),
-              tooltip: lang == 'RU' ? 'Обновить из базы' : 'Refresh from DB',
+              tooltip: 'Refresh from DB',
               onPressed: _onRefresh,
             ),
           IconButton(
@@ -198,7 +199,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                       ElevatedButton.icon(
                         onPressed: _onRefresh,
                         icon: const Icon(Icons.refresh),
-                        label: Text(lang == 'RU' ? 'Загрузить рецепты' : 'Load Recipes'),
+                        label: const Text('Load Recipes'),
                       ),
                     ],
                   ),
@@ -221,9 +222,7 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              lang == 'RU'
-                                  ? 'Загружаем рецепты из базы…'
-                                  : 'Loading recipes from database…',
+                              'Loading recipes from database…',
                               style: TextStyle(
                                   fontSize: 12,
                                   color: AppTheme.primaryColor),

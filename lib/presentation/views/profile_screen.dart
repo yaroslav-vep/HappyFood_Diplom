@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,6 +21,7 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final TextEditingController _allergyController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
+  Uint8List? _webAvatarBytes; // for web preview
 
   // Common allergen presets
   static const _commonAllergens = [
@@ -34,7 +37,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   // ── Avatar ─────────────────────────────────────────────────────────────────
 
   Future<void> _pickAvatar() async {
-    final lang = ref.read(languageProvider);
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).cardColor,
@@ -57,7 +59,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 16),
             ListTile(
               leading: Icon(Icons.photo_library, color: Theme.of(ctx).primaryColor),
-              title: Text(lang == 'RU' ? 'Из галереи' : 'From Gallery'),
+              title: const Text('From Gallery'),
               onTap: () async {
                 Navigator.pop(ctx);
                 await _pickImage(ImageSource.gallery);
@@ -65,7 +67,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             ListTile(
               leading: Icon(Icons.photo_camera, color: Theme.of(ctx).primaryColor),
-              title: Text(lang == 'RU' ? 'Сделать фото' : 'Take Photo'),
+              title: const Text('Take Photo'),
               onTap: () async {
                 Navigator.pop(ctx);
                 await _pickImage(ImageSource.camera);
@@ -87,15 +89,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         imageQuality: 85,
       );
       if (picked != null) {
-        ref.read(userViewModelProvider.notifier).updateAvatarPath(picked.path);
+        if (kIsWeb) {
+          // On web, read bytes directly — File() won't work
+          final bytes = await picked.readAsBytes();
+          setState(() => _webAvatarBytes = bytes);
+          // Store path as a marker (bytes are in local state)
+          ref.read(userViewModelProvider.notifier).updateAvatarPath('web_avatar');
+        } else {
+          ref.read(userViewModelProvider.notifier).updateAvatarPath(picked.path);
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(ref.read(languageProvider) == 'RU'
-                ? 'Ошибка при выборе фото'
-                : 'Error picking photo'),
+          const SnackBar(
+            content: Text('Error picking photo'),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -224,6 +232,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  // ── Avatar Image builder (web-safe) ────────────────────────────────────────
+
+  ImageProvider<Object>? _buildAvatarImage(String? path) {
+    if (path == null) return null;
+    if (kIsWeb && _webAvatarBytes != null) {
+      return MemoryImage(_webAvatarBytes!);
+    }
+    if (!kIsWeb && path != 'web_avatar') {
+      return FileImage(File(path));
+    }
+    return null;
+  }
+
   // ── Allergen helpers ────────────────────────────────────────────────────────
 
   void _addAllergy(String allergy) {
@@ -284,10 +305,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         CircleAvatar(
                           radius: 54,
                           backgroundColor: AppTheme.primaryColorLight,
-                          backgroundImage: user.avatarPath != null
-                              ? FileImage(File(user.avatarPath!))
-                              : null,
-                          child: user.avatarPath == null
+                          backgroundImage: _buildAvatarImage(user.avatarPath),
+                          child: _buildAvatarImage(user.avatarPath) == null
                               ? Icon(
                                   Icons.person,
                                   size: 54,
@@ -353,13 +372,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     context,
                     label: tr('age', lang),
                     value: '${user.age}',
-                    unit: lang == 'RU' ? 'лет' : 'yr',
+                    unit: 'yr',
                     onTap: () => _showDrumPicker(
                       title: tr('selectAge', lang),
                       minValue: 1,
                       maxValue: 120,
                       currentValue: user.age.toDouble(),
-                      unit: lang == 'RU' ? 'лет' : 'yr',
+                      unit: 'yr',
                       onSelected: (v) => userViewModel.updateAge(v.toInt()),
                     ),
                   ),
@@ -426,12 +445,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             // ── Restrictions / Allergens ─────────────────────────────────────
             _buildSectionTitle(context, tr('restrictions', lang)),
             _buildAllergenSection(context, user.allergies, lang),
-
-            const SizedBox(height: 32),
-
-            // ── Language ─────────────────────────────────────────────────────
-            _buildSectionTitle(context, tr('language', lang)),
-            _buildLanguageSwitcher(context, lang),
           ],
         ),
       ),
@@ -456,7 +469,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           // Preset common allergen chips
           Text(
-            lang == 'RU' ? 'Быстрый выбор:' : 'Quick select:',
+            'Quick select:',
             style: TextStyle(
               color: AppTheme.textSecondary,
               fontSize: 12,
@@ -549,7 +562,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   color: AppTheme.primaryColor,
                 ),
                 onPressed: () => _addAllergy(_allergyController.text),
-                tooltip: lang == 'RU' ? 'Добавить' : 'Add',
+                tooltip: 'Add',
               ),
             ],
           ),
@@ -697,63 +710,4 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildLanguageSwitcher(BuildContext context, String lang) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.language, color: Theme.of(context).primaryColor),
-          const SizedBox(width: 12),
-          Text(
-            tr('appLanguage', lang),
-            style: TextStyle(
-              color: Theme.of(context).textTheme.bodyLarge?.color,
-              fontSize: 16,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildLangChip(context, 'ENG', lang),
-                _buildLangChip(context, 'RU', lang),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLangChip(BuildContext context, String label, String current) {
-    final isActive = current == label;
-    return GestureDetector(
-      onTap: () => ref.read(languageProvider.notifier).state = label,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? Theme.of(context).primaryColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isActive ? Colors.white : Theme.of(context).hintColor,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            fontSize: 13,
-          ),
-        ),
-      ),
-    );
-  }
 }

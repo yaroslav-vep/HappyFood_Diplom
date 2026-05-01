@@ -4,7 +4,7 @@ import '../models/food_analysis_model.dart';
 
 class AiAnalysisRepository {
   static const String _baseUrl =
-      'https://ai-proxy-server-production-bfd3.up.railway.app/analyze-food-image';
+      'https://ai-proxy-server-production-fb99.up.railway.app/analyze-food-image';
 
   Future<FoodAnalysisModel> analyzeImage({
     required String base64Image,
