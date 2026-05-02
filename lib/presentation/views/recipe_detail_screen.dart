@@ -87,29 +87,36 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
   /// Returns only the cooking steps that are still relevant given available ingredients.
   List<String> _getAdaptedSteps(String lang) {
     final all = widget.recipe.localizedSteps(lang);
-    if (_canCook) return all;
-
-    // Get the names of missing OPTIONAL ingredients (case-insensitive)
-    final missingOptional = _missingIndices
-        .where((i) => widget.recipe.isOptional(i))
+    
+    // Get the names of ALL missing ingredients (case-insensitive)
+    final missingNames = _missingIndices
         .map((i) => widget.recipe.ingredients[i].toLowerCase())
         .toList();
 
-    if (missingOptional.isEmpty) return all;
+    if (missingNames.isEmpty) return all;
 
-    // Filter out steps that exclusively mention ONLY the skipped optional ingredient
+    // Filter steps
     return all.where((step) {
-      final lower = step.toLowerCase();
-      // If the step mentions a missing optional ingredient BUT also mentions
-      // a required ingredient that is available → keep the step
-      final mentionsMissing = missingOptional.any((ing) => lower.contains(ing));
-      if (!mentionsMissing) return true;
-      // Keep if step also mentions other required/available ingredients
-      return widget.recipe.ingredients
-          .asMap()
-          .entries
-          .where((e) => _availableIngredients.contains(e.key))
-          .any((e) => lower.contains(e.value.toLowerCase()));
+      final lowerStep = step.toLowerCase();
+      
+      // Find which ingredients are mentioned in this step
+      final mentionedMissing = missingNames.where((name) => lowerStep.contains(name)).toList();
+      
+      // If no missing ingredients are mentioned, keep the step
+      if (mentionedMissing.isEmpty) return true;
+      
+      // If the step mentions missing ingredients, check if it ALSO mentions available ingredients
+      final availableNames = _availableIngredients
+          .map((i) => widget.recipe.ingredients[i].toLowerCase())
+          .toList();
+          
+      final mentionsAvailable = availableNames.any((name) => lowerStep.contains(name));
+      
+      // If it mentions something missing BUT ALSO something available, keep it (to not lose the instruction)
+      if (mentionsAvailable) return true;
+      
+      // If it ONLY mentions missing ingredients, hide it
+      return false;
     }).toList();
   }
 
