@@ -84,41 +84,15 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
 
   bool get _canCook => _missingRequiredCount == 0;
 
-  /// Returns only the cooking steps that are still relevant given available ingredients.
+  /// Returns cooking steps.
+  /// For MealDB recipes the instructions are generic ("mix all ingredients")
+  /// and don't name each ingredient, so keyword filtering is unreliable.
+  /// Instead we always return all steps and show a disclaimer banner
+  /// listing which ingredients are missing.
   List<String> _getAdaptedSteps(String lang) {
-    final all = widget.recipe.localizedSteps(lang);
-    
-    // Get the names of ALL missing ingredients (case-insensitive)
-    final missingNames = _missingIndices
-        .map((i) => widget.recipe.ingredients[i].toLowerCase())
-        .toList();
-
-    if (missingNames.isEmpty) return all;
-
-    // Filter steps
-    return all.where((step) {
-      final lowerStep = step.toLowerCase();
-      
-      // Find which ingredients are mentioned in this step
-      final mentionedMissing = missingNames.where((name) => lowerStep.contains(name)).toList();
-      
-      // If no missing ingredients are mentioned, keep the step
-      if (mentionedMissing.isEmpty) return true;
-      
-      // If the step mentions missing ingredients, check if it ALSO mentions available ingredients
-      final availableNames = _availableIngredients
-          .map((i) => widget.recipe.ingredients[i].toLowerCase())
-          .toList();
-          
-      final mentionsAvailable = availableNames.any((name) => lowerStep.contains(name));
-      
-      // If it mentions something missing BUT ALSO something available, keep it (to not lose the instruction)
-      if (mentionsAvailable) return true;
-      
-      // If it ONLY mentions missing ingredients, hide it
-      return false;
-    }).toList();
+    return widget.recipe.localizedSteps(lang);
   }
+
 
   // ── AI Suggestion ─────────────────────────────────────────────────────────
 
@@ -141,13 +115,35 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
         '(detect from ingredient names).';
 
     try {
-      final response = await http
-          .post(
-            Uri.parse(_aiUrl),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'message': prompt}),
-          )
-          .timeout(const Duration(seconds: 20));
+      http.Response? response;
+
+      // Retry up to 2 times for server-side errors (503/502/504 = server waking up)
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        response = await http
+            .post(
+              Uri.parse(_aiUrl),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({'message': prompt}),
+            )
+            .timeout(const Duration(seconds: 30));
+
+        if (response.statusCode == 200 ||
+            ![502, 503, 504].contains(response.statusCode)) {
+          break; // success or non-retryable error
+        }
+
+        if (attempt < 2) {
+          await Future.delayed(const Duration(seconds: 3)); // wait before retry
+        }
+      }
+
+      if (response == null) {
+        setState(() {
+          _aiSuggestion = 'Server unavailable. Please try again in a moment.';
+          _aiLoading = false;
+        });
+        return;
+      }
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -157,9 +153,17 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
               'Sorry, I could not generate suggestions.';
           _aiLoading = false;
         });
+      } else if (response.statusCode == 503 ||
+          response.statusCode == 502 ||
+          response.statusCode == 504) {
+        setState(() {
+          _aiSuggestion =
+              'The AI server is warming up — please wait a few seconds and try again.';
+          _aiLoading = false;
+        });
       } else {
         setState(() {
-          _aiSuggestion = 'Error ${response.statusCode}. Please try again.';
+          _aiSuggestion = 'Error ${response!.statusCode}. Please try again.';
           _aiLoading = false;
         });
       }
@@ -231,11 +235,23 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
                   height: 300,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: NetworkImage(recipe.imageUrl),
-                      fit: BoxFit.cover,
-                    ),
+                    color: Colors.grey[800],
+                    image: recipe.imageUrl.isNotEmpty
+                        ? DecorationImage(
+                            image: NetworkImage(recipe.imageUrl),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
+                  child: recipe.imageUrl.isEmpty
+                      ? const Center(
+                          child: Icon(
+                            Icons.room_service_outlined,
+                            size: 100,
+                            color: Colors.grey,
+                          ),
+                        )
+                      : null,
                 ),
                 Container(
                   height: 300,

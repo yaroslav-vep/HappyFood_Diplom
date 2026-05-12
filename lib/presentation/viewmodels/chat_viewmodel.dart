@@ -58,8 +58,8 @@ class ChatViewModel extends StateNotifier<List<ChatMessage>> {
         dailyCalorieNeeds: userState.dailyCalories,
       );
 
-      // 4. Call API
-      final response = await _repository.sendMessage(text, profile);
+      // 4. Call API (passing the entire chat history 'state')
+      final response = await _repository.sendMessage(state, profile);
 
       // 5. Add AI Response
       state = [...state, response];

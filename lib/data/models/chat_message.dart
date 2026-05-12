@@ -3,8 +3,10 @@ class ChatMessage {
   final String text;
   final bool isUser;
   final DateTime timestamp;
-  final bool isCalorieRelated; // To highlight specific advice
+  final bool isCalorieRelated;
   final bool isError;
+  final bool isMealPlan;
+  final List<String> suggestedDishes;
 
   ChatMessage({
     required this.id,
@@ -13,6 +15,8 @@ class ChatMessage {
     required this.timestamp,
     this.isCalorieRelated = false,
     this.isError = false,
+    this.isMealPlan = false,
+    this.suggestedDishes = const [],
   });
 
   factory ChatMessage.user(String text) {
@@ -24,13 +28,20 @@ class ChatMessage {
     );
   }
 
-  factory ChatMessage.ai(String text, {bool isCalorieRelated = false}) {
+  factory ChatMessage.ai(
+    String text, {
+    bool isCalorieRelated = false,
+    bool isMealPlan = false,
+    List<String> suggestedDishes = const [],
+  }) {
     return ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       text: text,
       isUser: false,
       timestamp: DateTime.now(),
       isCalorieRelated: isCalorieRelated,
+      isMealPlan: isMealPlan,
+      suggestedDishes: suggestedDishes,
     );
   }
 

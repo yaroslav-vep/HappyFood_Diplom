@@ -5,6 +5,7 @@ import '../../data/models/eaten_meal_model.dart';
 import 'dart:math' as math;
 import 'profile_screen.dart';
 import 'meal_history_screen.dart';
+import 'recipe_detail_screen.dart';
 import '../../core/localization/app_localizations.dart';
 
 class NutritionScreen extends ConsumerWidget {
@@ -305,67 +306,92 @@ class NutritionScreen extends ConsumerWidget {
         ),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            // Thumbnail
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.network(
-                meal.recipe.imageUrl,
-                width: 58,
-                height: 58,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  width: 58,
-                  height: 58,
-                  color: Colors.grey[800],
-                  child: const Icon(Icons.restaurant, color: Colors.grey),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RecipeDetailScreen(recipe: meal.recipe),
+            ),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              // Thumbnail — gray tray if no image (AI-generated meals)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: meal.recipe.imageUrl.isEmpty
+                    ? Container(
+                        width: 58,
+                        height: 58,
+                        color: Colors.grey[300],
+                        child: Icon(
+                          Icons.room_service_outlined,
+                          color: Colors.grey[500],
+                          size: 28,
+                        ),
+                      )
+                    : Image.network(
+                        meal.recipe.imageUrl,
+                        width: 58,
+                        height: 58,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 58,
+                          height: 58,
+                          color: Colors.grey[300],
+                          child: Icon(
+                            Icons.room_service_outlined,
+                            color: Colors.grey[500],
+                            size: 28,
+                          ),
+                        ),
+                      ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      meal.recipe.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${meal.recipe.calories} kcal  •  ${tr('protein', lang).substring(0, 1)}:${meal.recipe.protein}g  ${tr('fats', lang).substring(0, 1)}:${meal.recipe.fats}g  ${tr('carbs', lang).substring(0, 1)}:${meal.recipe.carbs}g',
+                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    meal.recipe.title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                    timeStr,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '${meal.recipe.calories} kcal  •  ${tr('protein', lang).substring(0, 1)}:${meal.recipe.protein}g  ${tr('fats', lang).substring(0, 1)}:${meal.recipe.fats}g  ${tr('carbs', lang).substring(0, 1)}:${meal.recipe.carbs}g',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
+                  const Icon(Icons.chevron_right, color: Colors.grey, size: 18),
                 ],
               ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  timeStr,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Icon(Icons.chevron_left, color: Colors.grey, size: 18),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

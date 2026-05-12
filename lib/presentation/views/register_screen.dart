@@ -33,22 +33,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(tr('register', lang)),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildLangChip(context, 'ENG', lang),
-                _buildLangChip(context, 'RU', lang),
-              ],
-            ),
-          ),
-        ],
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -124,29 +108,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                 ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLangChip(BuildContext context, String label, String current) {
-    final isActive = current == label;
-    return GestureDetector(
-      onTap: () => ref.read(languageProvider.notifier).state = label,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: isActive ? Theme.of(context).primaryColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isActive ? Colors.white : Theme.of(context).hintColor,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-            fontSize: 13,
           ),
         ),
       ),
