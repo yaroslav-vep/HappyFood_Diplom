@@ -32,13 +32,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildLangChip(context, 'ENG', lang),
-                _buildLangChip(context, 'RU', lang),
-              ],
-            ),
+            child: Row(mainAxisSize: MainAxisSize.min),
           ),
         ],
       ),
@@ -71,9 +65,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                     ),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
                   ),
                 ),
                 obscureText: _obscurePassword,
@@ -84,7 +81,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               else ...[
                 ElevatedButton(
                   onPressed: () {
-                    ref.read(authViewModelProvider.notifier)
+                    ref
+                        .read(authViewModelProvider.notifier)
                         .login(_emailController.text, _passwordController.text);
                   },
                   child: Text(tr('loginBtn', lang)),
@@ -92,8 +90,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const RegisterScreen()));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                    );
                   },
                   child: Text(tr('createAccount', lang)),
                 ),
@@ -114,7 +114,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  Widget _buildLangChip(BuildContext context, String label, String current) {
+  Widget buildLangChip(BuildContext context, String label, String current) {
     final isActive = current == label;
     return GestureDetector(
       onTap: () => ref.read(languageProvider.notifier).state = label,

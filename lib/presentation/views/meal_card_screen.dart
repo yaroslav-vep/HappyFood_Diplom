@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart';
+
 import '../../core/constant/app_theme.dart';
 import '../../data/models/recipe_model.dart';
 import '../viewmodels/nutrition_viewmodel.dart';
@@ -187,23 +187,7 @@ class _MealCardScreenState extends ConsumerState<MealCardScreen>
     );
   }
 
-  // ── "Order Ingredients" ────────────────────────────────────────────────────
-  Future<void> _orderIngredients() async {
-    final card = _card!;
-    // Build a Google Shopping search query from the ingredients list
-    final query = Uri.encodeComponent(
-      card.ingredients.take(5).join(' ') + ' buy online',
-    );
-    final url = Uri.parse('https://www.google.com/search?q=$query&tbm=shop');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open browser.')),
-      );
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -591,13 +575,24 @@ class _MealCardScreenState extends ConsumerState<MealCardScreen>
                       ),
                     ),
                   ),
-
                   const SizedBox(width: 12),
 
                   // "Order Ingredients" button
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: _orderIngredients,
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text(
+                              '(Ingredient Ordering - Coming Soon!)',
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        );
+                      },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppTheme.primaryColor,
                         side: BorderSide(color: AppTheme.primaryColor),
