@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../viewmodels/products_viewmodel.dart';
+import '../viewmodels/recipes_viewmodel.dart';
 import '../../data/models/product_model.dart';
 import '../../data/models/recipe_model.dart';
 import '../../core/services/recipe_service.dart';
@@ -18,7 +19,20 @@ class ProductsScreen extends ConsumerStatefulWidget {
 
 class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   final TextEditingController _controller = TextEditingController();
-  final RecipeService _recipeService = RecipeService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Load recipes from API once — when done, rebuild so matching recipes update
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final recipeService = ref.read(recipeServiceProvider);
+      if (!recipeService.isLoaded) {
+        recipeService.loadRecipes(onComplete: () {
+          if (mounted) setState(() {});
+        });
+      }
+    });
+  }
 
   void _addProduct() {
     if (_controller.text.isNotEmpty) {
@@ -29,49 +43,48 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     }
   }
 
-  List<RecipeModel> _getMatchingRecipes(List<ProductModel> products) {
+  List<RecipeModel> _getMatchingRecipes(
+      List<ProductModel> products, RecipeService recipeService) {
     if (products.isEmpty) return [];
-    final names = products.map((p) => p.name.toLowerCase()).toSet();
-    return _recipeService.allRecipes.where((recipe) {
-      final matchEng = recipe.ingredients.any(
-        (ing) => names.contains(ing.toLowerCase()),
-      );
-      final matchRu = recipe.ingredientsRu?.any(
-            (ing) => names.contains(ing.toLowerCase()),
-          ) ??
-          false;
+    // Substring matching: "chicken" matches "Chicken Breast", etc.
+    final names = products.map((p) => p.name.toLowerCase().trim()).toList();
+
+    bool ingMatchesAny(String ingredient) {
+      final lowerIng = ingredient.toLowerCase();
+      return names.any((n) => lowerIng.contains(n) || n.contains(lowerIng));
+    }
+
+    return recipeService.allRecipes.where((recipe) {
+      final matchEng = recipe.ingredients.any(ingMatchesAny);
+      final matchRu = recipe.ingredientsRu?.any(ingMatchesAny) ?? false;
       return matchEng || matchRu;
     }).toList()
       ..sort((a, b) {
-        final aNamesEng = a.ingredients.map((e) => e.toLowerCase()).toSet();
-        final aNamesRu = a.ingredientsRu?.map((e) => e.toLowerCase()).toSet() ?? {};
-        final bNamesEng = b.ingredients.map((e) => e.toLowerCase()).toSet();
-        final bNamesRu = b.ingredientsRu?.map((e) => e.toLowerCase()).toSet() ?? {};
-
-        final aMatches = names.where((n) => aNamesEng.contains(n) || aNamesRu.contains(n)).length;
-        final bMatches = names.where((n) => bNamesEng.contains(n) || bNamesRu.contains(n)).length;
-        return bMatches.compareTo(aMatches);
+        final aCount = a.ingredients.where(ingMatchesAny).length;
+        final bCount = b.ingredients.where(ingMatchesAny).length;
+        return bCount.compareTo(aCount);
       });
   }
 
   int _countMatched(RecipeModel recipe, Set<String> productNames) {
-    final engCount = recipe.ingredients
-        .where((ing) => productNames.contains(ing.toLowerCase()))
-        .length;
-    final ruCount = recipe.ingredientsRu
-            ?.where((ing) => productNames.contains(ing.toLowerCase()))
-            .length ??
-        0;
-    // We take the max because an ingredient might be matched in either language
-    // strictly speaking we should probably set-intersect but this is usually fine
+    // Use substring matching: "chicken" matches "Chicken Breast", etc.
+    bool ingMatches(String ing) {
+      final lowerIng = ing.toLowerCase();
+      return productNames.any((n) => lowerIng.contains(n) || n.contains(lowerIng));
+    }
+
+    final engCount = recipe.ingredients.where(ingMatches).length;
+    final ruCount = recipe.ingredientsRu?.where(ingMatches).length ?? 0;
     return engCount > ruCount ? engCount : ruCount;
   }
 
   @override
   Widget build(BuildContext context) {
     final products = ref.watch(productsViewModelProvider);
-    final matchingRecipes = _getMatchingRecipes(products);
-    final productNames = products.map((p) => p.name.toLowerCase()).toSet();
+    // Use the shared RecipeService instance (same one loaded by RecipesViewModel)
+    final recipeService = ref.watch(recipeServiceProvider);
+    final matchingRecipes = _getMatchingRecipes(products, recipeService);
+    final productNames = products.map((p) => p.name.toLowerCase().trim()).toSet();
     final lang = ref.watch(languageProvider);
 
     return Scaffold(
