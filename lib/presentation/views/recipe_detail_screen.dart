@@ -34,7 +34,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
 
   // AI proxy URL
   static const _aiUrl =
-      'https://ai-proxy-server-production-5ebf.up.railway.app/chat';
+      'http://localhost:3000/chat';
 
   @override
   void initState() {
@@ -587,11 +587,11 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
               final isOptional = recipe.isOptional(index);
               final dotColor = isOptional
                   ? Colors.blue[300]!
-                  : const Color.fromARGB(255, 205, 214, 22)!;
+                  : const Color.fromARGB(255, 205, 214, 22);
               final tagText = isOptional ? 'opt.' : 'req.';
               final tagColor = isOptional
                   ? Colors.blue[400]!
-                  : const Color.fromARGB(255, 205, 214, 22)!;
+                  : const Color.fromARGB(255, 205, 214, 22);
               return InkWell(
                 onTap: () => _toggleIngredient(index),
                 borderRadius: BorderRadius.circular(16),

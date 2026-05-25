@@ -9,6 +9,7 @@ import '../../data/models/food_analysis_model.dart';
 import '../../data/models/recipe_model.dart';
 import '../viewmodels/nutrition_viewmodel.dart';
 import '../../core/localization/app_localizations.dart';
+import 'menu_scanner_screen.dart';
 
 class AIFoodAnalysisScreen extends ConsumerStatefulWidget {
   const AIFoodAnalysisScreen({super.key});
@@ -144,6 +145,10 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // ─── Menu Scanner Banner ─────────────────────────────────────────
+            _buildMenuScannerBanner(lang),
+            const SizedBox(height: 16),
+
             // ─── Image Zone ───────────────────────────────────────────────
             _buildImageZone(state, isDark, lang),
             const SizedBox(height: 16),
@@ -162,6 +167,81 @@ class _AIFoodAnalysisScreenState extends ConsumerState<AIFoodAnalysisScreen>
                 opacity: _fadeAnimation,
                 child: _buildResultSection(state.result!, lang),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Menu Scanner Banner ─────────────────────────────────────────────────
+  Widget _buildMenuScannerBanner(String lang) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MenuScannerScreen()),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFF8C42), Color(0xFFFFB347)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFF8C42).withOpacity(0.28),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.restaurant_menu_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tr('openMenuScanner', lang),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    tr('menuScannerSubtitle', lang),
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.85),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white,
+              size: 16,
+            ),
           ],
         ),
       ),

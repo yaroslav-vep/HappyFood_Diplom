@@ -130,5 +130,24 @@ const Map<String, Map<String, String>> _allStrings = {
     // AI Chat
     'aiChat': 'AI Chat',
     'askAboutFood': 'Ask about food...',
+
+    // Menu Scanner
+    'menuScanner': 'Menu Scanner',
+    'menuScannerSubtitle': 'Scan café menu → get КБЖУ for every dish',
+    'menuScannerHint': 'Point camera at a café menu to analyze every dish and calculate nutrition',
+    'uploadMenuPhoto': 'Upload menu photo',
+    'scanMenu': 'Scan Menu',
+    'scanningMenu': 'Scanning...',
+    'recognizingDishes': 'Recognizing dishes and calculating nutrition values...',
+    'dishesFound': 'dishes found',
+    'tapCardToAddDiary': 'Tap «+ Diary» on any dish to log it',
+    'estimatedIngredients': 'Estimated Ingredients',
+    'confidence': 'confidence',
+    'portionWeight': 'Portion',
+    'showIngredients': 'Show ingredients',
+    'hideIngredients': 'Hide ingredients',
+    'approximateWarning': 'Nutritional values are approximate. Actual data may vary depending on cooking method and portions.',
+    'scanAnotherMenu': 'Scan Another Menu',
+    'openMenuScanner': 'Scan Café Menu',
   },
 };

@@ -5,7 +5,7 @@ import '../models/user_model.dart';
 
 class ChatRepository {
   static const String _baseUrl =
-      'https://ai-proxy-server-production-5ebf.up.railway.app/chat';
+      'http://localhost:3000/chat';
 
   Future<ChatMessage> sendMessage(
       List<ChatMessage> history, UserModel? profile) async {
