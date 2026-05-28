@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../viewmodels/nutrition_viewmodel.dart';
 import '../../data/models/eaten_meal_model.dart';
 import 'dart:math' as math;
+import '../../core/constant/app_theme.dart';
 import 'profile_screen.dart';
 import 'meal_history_screen.dart';
 import 'recipe_detail_screen.dart';
@@ -182,7 +183,7 @@ class NutritionScreen extends ConsumerWidget {
                     tr('protein', lang),
                     '${nutrition.protein}g',
                     '/ ${nutrition.targetProtein}g',
-                    Colors.blueAccent,
+                    AppTheme.protColor,
                     nutrition.targetProtein > 0
                         ? nutrition.protein / nutrition.targetProtein
                         : 0,
@@ -196,7 +197,7 @@ class NutritionScreen extends ConsumerWidget {
                     tr('fats', lang),
                     '${nutrition.fats}g',
                     '/ ${nutrition.targetFats}g',
-                    Colors.orangeAccent,
+                    AppTheme.fatColor,
                     nutrition.targetFats > 0
                         ? nutrition.fats / nutrition.targetFats
                         : 0,
@@ -210,7 +211,7 @@ class NutritionScreen extends ConsumerWidget {
                     tr('carbs', lang),
                     '${nutrition.carbs}g',
                     '/ ${nutrition.targetCarbs}g',
-                    Colors.greenAccent,
+                    AppTheme.carbColor,
                     nutrition.targetCarbs > 0
                         ? nutrition.carbs / nutrition.targetCarbs
                         : 0,

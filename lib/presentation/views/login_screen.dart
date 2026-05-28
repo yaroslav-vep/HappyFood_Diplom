@@ -32,7 +32,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Row(mainAxisSize: MainAxisSize.min),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                buildLangChip(context, 'ru', lang),
+                buildLangChip(context, 'en', lang),
+                buildLangChip(context, 'kk', lang),
+              ],
+            ),
           ),
         ],
       ),

@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../data/models/recipe_model.dart';
 import '../viewmodels/nutrition_viewmodel.dart';
 import '../../core/localization/app_localizations.dart';
+import '../../core/constant/app_theme.dart';
 
 class RecipeDetailScreen extends ConsumerStatefulWidget {
   final RecipeModel recipe;
@@ -197,9 +198,9 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
             ),
           ],
         ),
-        backgroundColor: Colors.green[700],
+        backgroundColor: AppTheme.primaryColor,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.cardRadius)),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -217,9 +218,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(recipe.localizedTitle(lang)),
-        backgroundColor: isAllergic
-            ? Colors.red[900]
-            : Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
       backgroundColor: isAllergic
           ? Colors.red[50]!.withValues(alpha: 0.05)
@@ -331,28 +330,28 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
                         tr('calories', lang),
                         '${recipe.calories}',
                         'kcal',
-                        Colors.orange,
+                        AppTheme.calColor,
                       ),
                       _buildInfoColumn(
                         context,
                         tr('protein', lang),
                         '${recipe.protein}',
                         'g',
-                        Colors.blue,
+                        AppTheme.protColor,
                       ),
                       _buildInfoColumn(
                         context,
                         tr('fats', lang),
                         '${recipe.fats}',
                         'g',
-                        Colors.yellow,
+                        AppTheme.fatColor,
                       ),
                       _buildInfoColumn(
                         context,
                         tr('carbs', lang),
                         '${recipe.carbs}',
                         'g',
-                        Colors.green,
+                        AppTheme.carbColor,
                       ),
                     ],
                   ),
@@ -388,7 +387,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
                           const Icon(Icons.info_outline, color: Colors.orange),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: const Text(
+                            child: Text(
                               'Cooking steps unavailable — required ingredients are missing',
                               style: TextStyle(
                                 color: Colors.orange,
@@ -587,11 +586,11 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
               final isOptional = recipe.isOptional(index);
               final dotColor = isOptional
                   ? Colors.blue[300]!
-                  : const Color.fromARGB(255, 205, 214, 22);
+                  : AppTheme.primaryColor;
               final tagText = isOptional ? 'opt.' : 'req.';
               final tagColor = isOptional
                   ? Colors.blue[400]!
-                  : const Color.fromARGB(255, 205, 214, 22);
+                  : AppTheme.primaryColor;
               return InkWell(
                 onTap: () => _toggleIngredient(index),
                 borderRadius: BorderRadius.circular(16),
@@ -736,7 +735,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
               const Icon(Icons.block, color: Colors.white, size: 20),
               const SizedBox(width: 8),
               Expanded(
-                child: const Text(
+                child: Text(
                   'Cannot be cooked',
                   style: TextStyle(
                     color: Colors.white,

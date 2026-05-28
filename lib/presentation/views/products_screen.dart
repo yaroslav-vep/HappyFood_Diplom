@@ -166,7 +166,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                         Icon(
                           Icons.kitchen,
                           size: 64,
-                          color: Colors.grey[800],
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey[600]
+                              : Colors.grey[400],
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -275,7 +277,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                                   Icon(
                                     Icons.search_off,
                                     size: 48,
-                                    color: Colors.grey[600],
+                                    color: Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.grey[600]
+                                        : Colors.grey[400],
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
@@ -363,8 +367,15 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 errorBuilder: (_, __, ___) => Container(
                   width: 90,
                   height: 90,
-                  color: Colors.grey[800],
-                  child: const Icon(Icons.restaurant, color: Colors.grey),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey[800]
+                      : Colors.grey[200],
+                  child: Icon(
+                    Icons.restaurant,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[600]
+                        : Colors.grey[400],
+                  ),
                 ),
               ),
             ),

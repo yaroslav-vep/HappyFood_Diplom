@@ -29,6 +29,15 @@ class AppTheme {
   static const Color textSecondary = Color(0xFF84A59D); // Muted green-gray
   static const Color textTertiary = Color(0xFFB8C5C2); // Very light gray-green
 
+  // Macro / nutrient colors — used in all nutrition widgets
+  static const Color calColor  = Color(0xFFFF8A65); // warm coral-orange (calories)
+  static const Color protColor = Color(0xFF66BB6A); // soft green (protein)
+  static const Color fatColor  = Color(0xFFFFB74D); // warm amber (fats)
+  static const Color carbColor = Color(0xFF42A5F5); // soft blue (carbs)
+
+  // Unified card corner radius
+  static const double cardRadius = 16.0;
+
   // Status Colors - soft and calm
   static const Color errorColor = Color(
     0xFFE8A598,

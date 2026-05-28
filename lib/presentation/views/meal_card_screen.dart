@@ -171,9 +171,9 @@ class _MealCardScreenState extends ConsumerState<MealCardScreen>
             Expanded(child: Text('${card.name} added to your diary!')),
           ],
         ),
-        backgroundColor: Colors.green[700],
+        backgroundColor: AppTheme.primaryColor,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.cardRadius)),
         duration: const Duration(seconds: 2),
         action: SnackBarAction(
           label: 'View',
@@ -354,7 +354,7 @@ class _MealCardScreenState extends ConsumerState<MealCardScreen>
                     ),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -363,28 +363,28 @@ class _MealCardScreenState extends ConsumerState<MealCardScreen>
                           'Calories',
                           '${card.calories}',
                           'kcal',
-                          Colors.orange,
+                          AppTheme.calColor,
                         ),
                         _divider(),
                         _nutrientTile(
                           'Protein',
                           '${card.protein}g',
                           'protein',
-                          Colors.blue,
+                          AppTheme.protColor,
                         ),
                         _divider(),
                         _nutrientTile(
                           'Fats',
                           '${card.fats}g',
                           'fats',
-                          Colors.amber,
+                          AppTheme.fatColor,
                         ),
                         _divider(),
                         _nutrientTile(
                           'Carbs',
                           '${card.carbs}g',
                           'carbs',
-                          Colors.green,
+                          AppTheme.carbColor,
                         ),
                       ],
                     ),
@@ -552,14 +552,15 @@ class _MealCardScreenState extends ConsumerState<MealCardScreen>
                 children: [
                   // "I Ate This" button
                   Expanded(
-                    child: FilledButton.icon(
+                    child: ElevatedButton.icon(
                       onPressed: _logged ? null : _logMeal,
-                      style: FilledButton.styleFrom(
+                      style: ElevatedButton.styleFrom(
                         backgroundColor:
-                            _logged ? Colors.grey[600] : Colors.green[700],
+                            _logged ? Colors.grey[600] : AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(AppTheme.cardRadius),
                         ),
                       ),
                       icon: Icon(
@@ -588,7 +589,7 @@ class _MealCardScreenState extends ConsumerState<MealCardScreen>
                             ),
                             behavior: SnackBarBehavior.floating,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(AppTheme.cardRadius),
                             ),
                           ),
                         );
@@ -598,7 +599,7 @@ class _MealCardScreenState extends ConsumerState<MealCardScreen>
                         side: BorderSide(color: AppTheme.primaryColor),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(AppTheme.cardRadius),
                         ),
                       ),
                       icon: const Icon(Icons.shopping_cart_outlined, size: 18),

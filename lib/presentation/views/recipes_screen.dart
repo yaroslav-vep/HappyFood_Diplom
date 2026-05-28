@@ -188,7 +188,9 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
                       Icon(
                         Icons.restaurant_menu,
                         size: 64,
-                        color: Colors.grey[400],
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[600]
+                            : Colors.grey[400],
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -317,7 +319,9 @@ class _RecipesScreenState extends ConsumerState<RecipesScreen> {
               height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.grey[800],
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey[800]
+                    : Colors.grey[200],
                 image: DecorationImage(
                   image: NetworkImage(recipe.imageUrl),
                   fit: BoxFit.cover,

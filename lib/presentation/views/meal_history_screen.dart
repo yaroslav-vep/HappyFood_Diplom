@@ -50,7 +50,13 @@ class MealHistoryScreen extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.history, size: 72, color: Colors.grey[400]),
+          Icon(
+            Icons.history,
+            size: 72,
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[600]
+                : Colors.grey[400],
+          ),
           const SizedBox(height: 16),
           const Text(
             'No meal history yet.',
@@ -240,8 +246,16 @@ class _MealHistoryItem extends StatelessWidget {
               errorBuilder: (_, __, ___) => Container(
                 width: 48,
                 height: 48,
-                color: Colors.grey[800],
-                child: const Icon(Icons.restaurant, color: Colors.grey, size: 20),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey[800]
+                    : Colors.grey[200],
+                child: Icon(
+                  Icons.restaurant,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey[600]
+                      : Colors.grey[400],
+                  size: 20,
+                ),
               ),
             ),
           ),
