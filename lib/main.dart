@@ -25,10 +25,17 @@ void main() async {
       ? UserModel.fromJson(jsonDecode(userJson))
       : null;
 
+  final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+  final email = prefs.getString('auth_email');
+  final initialAuthState = isLoggedIn
+      ? AuthState(status: AuthStatus.authenticated, email: email)
+      : const AuthState(status: AuthStatus.unauthenticated);
+
   runApp(
     ProviderScope(
       overrides: [
         userViewModelProvider.overrideWith((ref) => UserViewModel(initialUser)),
+        authViewModelProvider.overrideWith((ref) => AuthViewModel(initialAuthState)),
       ],
       child: const HappyFoodApp(),
     ),

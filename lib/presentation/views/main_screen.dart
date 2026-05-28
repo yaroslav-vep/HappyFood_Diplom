@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'nutrition_screen.dart';
 import 'products_screen.dart';
 import 'recipes_screen.dart';
@@ -23,10 +24,28 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     RecipesScreen(),
   ];
 
-  void _onItemTapped(int index) {
+  @override
+  void initState() {
+    super.initState();
+    _loadSelectedTab();
+  }
+
+  Future<void> _loadSelectedTab() async {
+    final prefs = await SharedPreferences.getInstance();
+    final index = prefs.getInt('last_selected_tab');
+    if (index != null && index >= 0 && index < _screens.length) {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
+  }
+
+  void _onItemTapped(int index) async {
     setState(() {
       _selectedIndex = index;
     });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('last_selected_tab', index);
   }
 
   @override

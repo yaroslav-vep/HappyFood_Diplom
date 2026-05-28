@@ -35,7 +35,7 @@ class _RecipeDetailScreenState extends ConsumerState<RecipeDetailScreen>
 
   // AI proxy URL
   static const _aiUrl =
-      'http://localhost:3000/chat';
+      'https://ai-proxy-server-xi.vercel.app/chat';
 
   @override
   void initState() {

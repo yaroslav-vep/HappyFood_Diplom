@@ -5,7 +5,7 @@ import '../models/user_model.dart';
 
 class ChatRepository {
   static const String _baseUrl =
-      'http://localhost:3000/chat';
+      'https://ai-proxy-server-xi.vercel.app/chat';
 
   Future<ChatMessage> sendMessage(
       List<ChatMessage> history, UserModel? profile) async {
