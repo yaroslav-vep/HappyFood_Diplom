@@ -25,23 +25,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(tr('login', lang)),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                buildLangChip(context, 'ru', lang),
-                buildLangChip(context, 'en', lang),
-                buildLangChip(context, 'kk', lang),
-              ],
-            ),
-          ),
-        ],
       ),
       body: Center(
         child: SingleChildScrollView(

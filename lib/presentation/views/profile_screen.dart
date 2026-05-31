@@ -359,7 +359,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               context,
               label: tr('gender', lang),
               value: user.gender,
-              items: ['Male', 'Female', 'Other'],
+              items: ['Male', 'Female'],
               onChanged: (val) => userViewModel.updateGender(val!),
             ),
             const SizedBox(height: 16),

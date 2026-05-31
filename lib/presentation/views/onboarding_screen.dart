@@ -302,14 +302,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   () => viewModel.updateGender('Female'),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildSegmentedButton(
-                  'Other',
-                  state.gender == 'Other',
-                  () => viewModel.updateGender('Other'),
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 32),

@@ -19,7 +19,7 @@ class MealCardScreen extends ConsumerStatefulWidget {
 class _MealCardScreenState extends ConsumerState<MealCardScreen>
     with SingleTickerProviderStateMixin {
   static const _proxyUrl =
-      'https://ai-proxy-server-xi.vercel.app/chat';
+      'https://ai-proxy-server-git-main-yaroslavv-5681s-projects.vercel.app/chat';
 
   bool _loading = true;
   String? _error;

@@ -44,7 +44,7 @@ OUTPUT FORMAT (strict JSON):
 
 class MenuAnalysisRepository {
   static const String _baseUrl =
-      'https://ai-proxy-server-xi.vercel.app/analyze-menu-image';
+      'https://ai-proxy-server-git-main-yaroslavv-5681s-projects.vercel.app/analyze-menu-image';
 
   /// Sends a base64-encoded menu image to the AI proxy and parses the result.
   Future<MenuAnalysisResult> analyzeMenuImage({
