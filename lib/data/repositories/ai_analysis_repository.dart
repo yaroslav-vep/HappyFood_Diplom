@@ -4,7 +4,7 @@ import '../models/food_analysis_model.dart';
 
 class AiAnalysisRepository {
   static const String _baseUrl =
-      'https://ai-proxy-server-git-main-yaroslavv-5681s-projects.vercel.app/analyze-food-image';
+      'https://ai-proxy-server-xi.vercel.app/analyze-food-image';
 
   Future<FoodAnalysisModel> analyzeImage({
     required String base64Image,
